@@ -1,0 +1,25 @@
+*.jpeg
+*.jpg
+*.png
+
+# YOLO outputs and exported models
+runs/
+*.pt
+*.onnx
+*.engine
+*.tflite
+
+# Python cache and virtual environments
+__pycache__/
+*.py[cod]
+.venv/
+venv/
+
+# Local environment files
+.env
+.env.*
+
+# Editors and operating systems
+.vscode/
+.idea/
+.DS_Store
