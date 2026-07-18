@@ -58,29 +58,6 @@ class FaceBox:
 
 
 @dataclass(frozen=True)
-class FaceDetection:
-    """YuNet'in tek bir yüz için ürettiği anlamlandırılmış sonuç."""
-
-    box: FaceBox
-    right_eye: Point
-    left_eye: Point
-    nose_tip: Point
-    right_mouth_corner: Point
-    left_mouth_corner: Point
-    confidence_score: float
-
-    @property
-    def landmark_points(self) -> tuple[Point, Point, Point, Point, Point]:
-        return (
-            self.right_eye,
-            self.left_eye,
-            self.nose_tip,
-            self.right_mouth_corner,
-            self.left_mouth_corner,
-        )
-
-
-@dataclass(frozen=True)
 class FaceQuality:
     """Tek bir yüz için hesaplanan görüntü kalitesi değerleri."""
 
