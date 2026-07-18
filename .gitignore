@@ -1,6 +1,7 @@
 *.jpeg
 *.jpg
 *.png
+*.pptx
 
 # YOLO outputs and exported models
 runs/
