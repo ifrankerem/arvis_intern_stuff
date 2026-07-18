@@ -13,3 +13,4 @@ results = model.predict(
 boxed_image = results[0].plot()
 
 cv2.imwrite("3.jpg", boxed_image)
+
