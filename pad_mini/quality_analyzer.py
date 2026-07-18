@@ -1,93 +1,88 @@
-from __future__ import annotations
-
-from dataclasses import dataclass
-
 import cv2
-import numpy as np
 
-from data_models import FaceBox, FaceQuality
-
-
-@dataclass(frozen=True)
-class QualityThresholds:
-    """Kameraya ve ortama göre ayarlanabilecek kalite eşikleri."""
-
-    min_face_area_ratio: float = 0.08
-    min_blur_score: float = 80.0
-    min_brightness: float = 60.0
-    max_brightness: float = 200.0
+import config
+from data_models import Color, DisplayMessage, FaceQuality
 
 
 class QualityAnalyzer:
-    """Tespit edilen yüz bölgesinin görüntü kalitesini ölçer."""
+    """Yuz bolgesinin goruntu kalitesini kontrol eder."""
 
-    def __init__(self, thresholds: QualityThresholds | None = None) -> None:
-        self.thresholds = thresholds or QualityThresholds()
+    def analyze(self, frame, face_box):
+        frame_height = frame.shape[0]
+        frame_width = frame.shape[1]
 
-    def analyze(self, frame: np.ndarray, face_box: FaceBox) -> FaceQuality:
-        frame_height, frame_width = frame.shape[:2]
-        safe_box = face_box.clamp_to_frame(frame_width, frame_height)
+        safe_box = face_box.clamp_to_frame(
+            frame_width,
+            frame_height,
+        )
 
-        if safe_box.area == 0:
-            raise ValueError("Yüz bölgesi boş olarak kırpıldı.")
+        if safe_box.get_area() == 0:
+            raise ValueError("Yuz bolgesi bos olarak kirpildi.")
 
         frame_area = frame_height * frame_width
-        face_area_ratio = safe_box.area / frame_area
+        face_area = safe_box.get_area()
+        face_area_ratio = face_area / frame_area
 
         face_region = frame[
             safe_box.y : safe_box.y + safe_box.height,
             safe_box.x : safe_box.x + safe_box.width,
         ]
-        face_gray = cv2.cvtColor(face_region, cv2.COLOR_BGR2GRAY)
 
-        blur_score = float(
-            cv2.Laplacian(face_gray, cv2.CV_64F).var()
+        face_gray = cv2.cvtColor(
+            face_region,
+            cv2.COLOR_BGR2GRAY,
         )
+
+        laplacian_image = cv2.Laplacian(
+            face_gray,
+            cv2.CV_64F,
+        )
+        blur_score = float(laplacian_image.var())
         brightness = float(face_gray.mean())
 
-        return FaceQuality(
-            face_area_ratio=face_area_ratio,
-            blur_score=blur_score,
-            brightness=brightness,
-            face_large_enough=(
-                face_area_ratio >= self.thresholds.min_face_area_ratio
-            ),
-            sharp_enough=(
-                blur_score >= self.thresholds.min_blur_score
-            ),
-            brightness_ok=(
-                self.thresholds.min_brightness
-                <= brightness
-                <= self.thresholds.max_brightness
-            ),
+        face_large_enough = (
+            face_area_ratio >= config.MINIMUM_FACE_AREA_RATIO
+        )
+        sharp_enough = blur_score >= config.MINIMUM_BLUR_SCORE
+        brightness_ok = (
+            config.MINIMUM_BRIGHTNESS
+            <= brightness
+            <= config.MAXIMUM_BRIGHTNESS
         )
 
-    def get_message(
-        self,
-        number_of_faces: int,
-        quality: FaceQuality | None,
-    ) -> tuple[str, tuple[int, int, int]]:
-        """Ekranda gösterilecek mesajı ve BGR rengini döndürür."""
+        return FaceQuality(
+            face_area_ratio,
+            blur_score,
+            brightness,
+            face_large_enough,
+            sharp_enough,
+            brightness_ok,
+        )
+
+    def get_message(self, number_of_faces, quality):
+        error_color = Color(0, 0, 255)
+        warning_color = Color(0, 165, 255)
+        success_color = Color(0, 255, 0)
 
         if number_of_faces == 0:
-            return "YUZ BULUNAMADI", (0, 0, 255)
+            return DisplayMessage("YUZ BULUNAMADI", error_color)
 
         if number_of_faces > 1:
-            return "BIRDEN FAZLA YUZ", (0, 0, 255)
+            return DisplayMessage("BIRDEN FAZLA YUZ", error_color)
 
         if quality is None:
-            return "ANALIZ HATASI", (0, 0, 255)
+            return DisplayMessage("ANALIZ HATASI", error_color)
 
         if not quality.face_large_enough:
-            return "KAMERAYA YAKLAS", (0, 165, 255)
+            return DisplayMessage("KAMERAYA YAKLAS", warning_color)
 
         if not quality.sharp_enough:
-            return "GORUNTU BULANIK", (0, 165, 255)
+            return DisplayMessage("GORUNTU BULANIK", warning_color)
 
-        if quality.brightness < self.thresholds.min_brightness:
-            return "ORTAM COK KARANLIK", (0, 165, 255)
+        if quality.brightness < config.MINIMUM_BRIGHTNESS:
+            return DisplayMessage("ORTAM COK KARANLIK", warning_color)
 
-        if quality.brightness > self.thresholds.max_brightness:
-            return "ORTAM COK PARLAK", (0, 165, 255)
+        if quality.brightness > config.MAXIMUM_BRIGHTNESS:
+            return DisplayMessage("ORTAM COK PARLAK", warning_color)
 
-        return "ANALIZE UYGUN", (0, 255, 0)
+        return DisplayMessage("ANALIZE UYGUN", success_color)

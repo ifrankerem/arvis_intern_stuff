@@ -1,75 +1,89 @@
-from __future__ import annotations
-
-from dataclasses import dataclass
-from enum import Enum
-
-
-@dataclass(frozen=True)
 class Point:
-    """Görüntü üzerindeki bir piksel koordinatı."""
+    """Goruntu uzerindeki bir piksel koordinati."""
 
-    x: int
-    y: int
+    def __init__(self, x, y):
+        self.x = x
+        self.y = y
 
-    def as_tuple(self) -> tuple[int, int]:
-        """OpenCV fonksiyonlarının beklediği (x, y) biçimini döndürür."""
-
-        return self.x, self.y
+    def to_tuple(self):
+        return (self.x, self.y)
 
 
-@dataclass(frozen=True)
+class Color:
+    """OpenCV'nin kullandigi BGR renk degeri."""
+
+    def __init__(self, blue, green, red):
+        self.blue = blue
+        self.green = green
+        self.red = red
+
+    def to_tuple(self):
+        return (self.blue, self.green, self.red)
+
+
+class DisplayMessage:
+    """Ekranda gosterilecek metin ve renk."""
+
+    def __init__(self, text, color):
+        self.text = text
+        self.color = color
+
+
 class FaceBox:
-    """Tespit edilen yüzü çevreleyen dikdörtgen."""
+    """Tespit edilen yuzun dikdortgen sinirlari."""
 
-    x: int
-    y: int
-    width: int
-    height: int
+    def __init__(self, x, y, width, height):
+        self.x = x
+        self.y = y
+        self.width = width
+        self.height = height
 
-    @property
-    def area(self) -> int:
+    def get_area(self):
         return self.width * self.height
 
-    @property
-    def top_left(self) -> Point:
-        return Point(x=self.x, y=self.y)
+    def get_top_left(self):
+        return Point(self.x, self.y)
 
-    @property
-    def bottom_right(self) -> Point:
+    def get_bottom_right(self):
         return Point(
-            x=self.x + self.width,
-            y=self.y + self.height,
+            self.x + self.width,
+            self.y + self.height,
         )
 
-    def clamp_to_frame(self, frame_width: int, frame_height: int) -> FaceBox:
-        """Kutuyu görüntü sınırlarının dışına taşmayacak şekilde daraltır."""
-
+    def clamp_to_frame(self, frame_width, frame_height):
         left = max(0, self.x)
         top = max(0, self.y)
         right = min(frame_width, self.x + self.width)
         bottom = min(frame_height, self.y + self.height)
 
         return FaceBox(
-            x=left,
-            y=top,
-            width=max(0, right - left),
-            height=max(0, bottom - top),
+            left,
+            top,
+            max(0, right - left),
+            max(0, bottom - top),
         )
 
 
-@dataclass(frozen=True)
 class FaceQuality:
-    """Tek bir yüz için hesaplanan görüntü kalitesi değerleri."""
+    """Bir yuz icin hesaplanan goruntu kalitesi."""
 
-    face_area_ratio: float
-    blur_score: float
-    brightness: float
-    face_large_enough: bool
-    sharp_enough: bool
-    brightness_ok: bool
+    def __init__(
+        self,
+        face_area_ratio,
+        blur_score,
+        brightness,
+        face_large_enough,
+        sharp_enough,
+        brightness_ok,
+    ):
+        self.face_area_ratio = face_area_ratio
+        self.blur_score = blur_score
+        self.brightness = brightness
+        self.face_large_enough = face_large_enough
+        self.sharp_enough = sharp_enough
+        self.brightness_ok = brightness_ok
 
-    @property
-    def is_acceptable(self) -> bool:
+    def is_acceptable(self):
         return (
             self.face_large_enough
             and self.sharp_enough
@@ -77,105 +91,117 @@ class FaceQuality:
         )
 
 
-@dataclass(frozen=True)
 class FaceLandmarkDetection:
-    """MediaPipe'ın yoğun landmark ve yüz hareketi çıktısı."""
+    """MediaPipe tarafindan tespit edilen yuz ve landmark verileri."""
 
-    box: FaceBox
-    landmarks: tuple[Point, ...]
-    left_eye_landmarks: tuple[Point, ...]
-    right_eye_landmarks: tuple[Point, ...]
-    mouth_landmarks: tuple[Point, ...]
-    nose_tip: Point
-    left_mouth_corner: Point
-    right_mouth_corner: Point
-    upper_lip_center: Point
-    lower_lip_center: Point
-    left_eye_blink_score: float
-    right_eye_blink_score: float
-    jaw_open_score: float
-    mouth_left_score: float
-    mouth_right_score: float
-    yaw_degrees: float
-    pitch_degrees: float
-    roll_degrees: float
+    def __init__(
+        self,
+        box,
+        landmarks,
+        left_eye_landmarks,
+        right_eye_landmarks,
+        mouth_landmarks,
+        nose_tip,
+        left_mouth_corner,
+        right_mouth_corner,
+        upper_lip_center,
+        lower_lip_center,
+        left_eye_blink_score,
+        right_eye_blink_score,
+        jaw_open_score,
+        mouth_left_score,
+        mouth_right_score,
+        yaw_degrees,
+        pitch_degrees,
+        roll_degrees,
+    ):
+        self.box = box
+        self.landmarks = landmarks
+        self.left_eye_landmarks = left_eye_landmarks
+        self.right_eye_landmarks = right_eye_landmarks
+        self.mouth_landmarks = mouth_landmarks
+        self.nose_tip = nose_tip
+        self.left_mouth_corner = left_mouth_corner
+        self.right_mouth_corner = right_mouth_corner
+        self.upper_lip_center = upper_lip_center
+        self.lower_lip_center = lower_lip_center
+        self.left_eye_blink_score = left_eye_blink_score
+        self.right_eye_blink_score = right_eye_blink_score
+        self.jaw_open_score = jaw_open_score
+        self.mouth_left_score = mouth_left_score
+        self.mouth_right_score = mouth_right_score
+        self.yaw_degrees = yaw_degrees
+        self.pitch_degrees = pitch_degrees
+        self.roll_degrees = roll_degrees
 
-    @property
-    def average_blink_score(self) -> float:
-        return (
-            self.left_eye_blink_score + self.right_eye_blink_score
-        ) / 2.0
+    def get_average_blink_score(self):
+        total_score = (
+            self.left_eye_blink_score
+            + self.right_eye_blink_score
+        )
+        return total_score / 2.0
 
 
-@dataclass(frozen=True)
+class HeadRotation:
+    """Modelin yuz donus matrisinden hesaplanan kafa acilari."""
+
+    def __init__(self, pitch_degrees, yaw_degrees, roll_degrees):
+        self.pitch_degrees = pitch_degrees
+        self.yaw_degrees = yaw_degrees
+        self.roll_degrees = roll_degrees
+
+
 class FaceAlignment:
-    """Kafa ve ağız hizalama analizinin sonucu."""
+    """Kafa ve agiz hizalama analizinin sonucu."""
 
-    yaw_degrees: float
-    pitch_degrees: float
-    roll_degrees: float
-    mouth_angle_degrees: float
-    mouth_open_score: float
-    mouth_lateral_difference: float
-    head_aligned: bool
-    mouth_closed: bool
-    mouth_centered: bool
-    mouth_aligned: bool
+    def __init__(
+        self,
+        yaw_degrees,
+        pitch_degrees,
+        roll_degrees,
+        mouth_angle_degrees,
+        mouth_open_score,
+        mouth_lateral_difference,
+        head_aligned,
+        mouth_closed,
+        mouth_centered,
+        mouth_aligned,
+    ):
+        self.yaw_degrees = yaw_degrees
+        self.pitch_degrees = pitch_degrees
+        self.roll_degrees = roll_degrees
+        self.mouth_angle_degrees = mouth_angle_degrees
+        self.mouth_open_score = mouth_open_score
+        self.mouth_lateral_difference = mouth_lateral_difference
+        self.head_aligned = head_aligned
+        self.mouth_closed = mouth_closed
+        self.mouth_centered = mouth_centered
+        self.mouth_aligned = mouth_aligned
 
-    @property
-    def is_acceptable(self) -> bool:
+    def is_acceptable(self):
         return self.head_aligned and self.mouth_aligned
 
 
-class Challenge(str, Enum):
-    BLINK = "BLINK"
-    TURN_LEFT = "TURN_LEFT"
-    TURN_RIGHT = "TURN_RIGHT"
-
-
-@dataclass(frozen=True)
-class LivenessResult:
-    """JSON dosyasına yazılacak aktif canlılık sonucu."""
-
-    face_detected: bool
-    quality_status: str
-    liveness_type: str
-    challenge_sequence: tuple[Challenge, ...]
-    completed_challenges: tuple[Challenge, ...]
-    verdict: str
-    risk_score: int
-    processing_time_ms: int
-
-    def to_dict(self) -> dict[str, object]:
-        return {
-            "face_detected": self.face_detected,
-            "quality_status": self.quality_status,
-            "liveness_type": self.liveness_type,
-            "challenge_sequence": [
-                challenge.value for challenge in self.challenge_sequence
-            ],
-            "completed_challenges": [
-                challenge.value for challenge in self.completed_challenges
-            ],
-            "verdict": self.verdict,
-            "risk_score": self.risk_score,
-            "processing_time_ms": self.processing_time_ms,
-        }
-
-
-@dataclass(frozen=True)
 class FaceAnalysisResult:
-    """Canlılık kararı vermeden üretilen yüz analizi JSON sonucu."""
+    """JSON dosyasina yazilacak yuz analiz sonucu."""
 
-    face_detected: bool
-    quality_status: str
-    alignment_status: str
-    alignment: FaceAlignment | None
-    processing_time_ms: int
+    def __init__(
+        self,
+        face_detected,
+        quality_status,
+        alignment_status,
+        alignment,
+        processing_time_ms,
+    ):
+        self.face_detected = face_detected
+        self.quality_status = quality_status
+        self.alignment_status = alignment_status
+        self.alignment = alignment
+        self.processing_time_ms = processing_time_ms
 
-    def to_dict(self) -> dict[str, object]:
-        head_pose: dict[str, float] | None = None
-        mouth: dict[str, object] | None = None
+    def to_dictionary(self):
+        head_pose = None
+        mouth = None
 
         if self.alignment is not None:
             head_pose = {
@@ -212,3 +238,22 @@ class FaceAnalysisResult:
             "risk_score": None,
             "processing_time_ms": self.processing_time_ms,
         }
+
+
+class FrameProcessingResult:
+    """Tek kamera karesi islendikten sonra uretilen veriler."""
+
+    def __init__(self, display_frame, face_image, analysis_result):
+        self.display_frame = display_frame
+        self.face_image = face_image
+        self.analysis_result = analysis_result
+
+
+class FaceFrameAnalysis:
+    """Tek yuz bulunan bir karede hesaplanan ara sonuclar."""
+
+    def __init__(self, detected_face, quality, alignment, face_image):
+        self.detected_face = detected_face
+        self.quality = quality
+        self.alignment = alignment
+        self.face_image = face_image
