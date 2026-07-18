@@ -1,0 +1,25 @@
+{
+    "face_detected": true,
+    "quality_status": "ACCEPTABLE",
+    "alignment_status": "ACCEPTABLE",
+    "head_pose": {
+        "yaw_degrees": 2.32,
+        "pitch_degrees": -8.7,
+        "roll_degrees": -4.69,
+        "aligned": true
+    },
+    "mouth": {
+        "open_score": 0.0,
+        "angle_degrees": 4.76,
+        "lateral_difference": 0.008,
+        "closed": true,
+        "centered": true,
+        "aligned": true
+    },
+    "liveness_type": "NOT_EVALUATED",
+    "challenge_sequence": [],
+    "completed_challenges": [],
+    "verdict": "NOT_EVALUATED",
+    "risk_score": null,
+    "processing_time_ms": 31671
+}
