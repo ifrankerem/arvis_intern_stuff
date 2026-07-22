@@ -10,7 +10,6 @@ from data_models import (
     FaceFrameAnalysis,
     FrameProcessingResult,
 )
-from face_landmarker import FaceLandmarker
 from json_result_writer import JsonResultWriter
 from quality_analyzer import QualityAnalyzer
 
@@ -19,6 +18,10 @@ class FaceQualityApplication:
     """Kamera, analiz, ekran ve kayit akislarini yonetir."""
 
     def __init__(self):
+        # MediaPipe yalnizca model modu gercekten baslatildiginda yuklenir.
+        # Bu sayede model-free pre-control modu bu bagimliligi import etmez.
+        from face_landmarker import FaceLandmarker
+
         self.face_landmarker = FaceLandmarker(
             config.MODEL_PATH,
             config.MAXIMUM_FACE_COUNT,
@@ -31,6 +34,8 @@ class FaceQualityApplication:
         self.started_at = time.perf_counter()
         self.latest_face_image = None
         self.latest_analysis_result = None
+        self.latest_pre_control_results = {}
+        self.is_closed = False
 
     def run(self):
         camera = cv2.VideoCapture(config.CAMERA_INDEX)
@@ -65,10 +70,17 @@ class FaceQualityApplication:
                 should_exit = self.handle_key(pressed_key)
         finally:
             camera.release()
-            self.face_landmarker.close()
             cv2.destroyAllWindows()
+            self.shutdown()
+
+    def shutdown(self):
+        """Model kaynaklarini guvenli bir sekilde serbest birakir."""
+        if self.is_closed:
+            return
 
         self.save_final_json_result()
+        self.face_landmarker.close()
+        self.is_closed = True
 
     def process_frame(self, camera_frame):
         analysis_frame = self.prepare_frame(camera_frame)

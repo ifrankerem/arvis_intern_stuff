@@ -1,9 +1,8 @@
-from face_quality_application import FaceQualityApplication
+from application_gui import run_gui
 
 
 def main():
-    application = FaceQualityApplication()
-    application.run()
+    run_gui()
 
 
 if __name__ == "__main__":

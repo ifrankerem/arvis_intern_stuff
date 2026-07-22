@@ -1,22 +1,16 @@
-"""Yuz ROI'si icin Global FFT tabanli sunum-saldirisi on kontrolu.
-
-Bu dosya bilerek uygulamanin geri kalanindan bagimsiz tutulur. Calistirildiginda
-mevcut ``FaceQualityApplication`` sinifini genisletir; dolayisiyla var olan yuz
-tespiti, kalite/hizalama analizi ve kayit davranislari degismeden kalir.
-"""
+"""Model veya MediaPipe kullanmayan Global FFT pre-control algoritmasi."""
 
 from collections import deque
-import time
 
 import cv2
 import numpy as np
 
-from data_models import FrameProcessingResult
-from face_quality_application import FaceQualityApplication
 
 
 class FFTAnalysisResult:
     """Bir kare icin FFT on kontrolunun ekranda kullanilan sonucu."""
+
+    display_name = "FFT frekans analizi"
 
     def __init__(
         self,
@@ -66,6 +60,10 @@ class GlobalFFTPreController:
         self.low_score_streak = 0
         self.invalid_frame_streak = 0
         self.warning_is_active = False
+        self.latest_face_crop = None
+        self.latest_shifted_fft = None
+        self.latest_power_spectrum = None
+        self.latest_log_spectrum = None
 
         coordinates = np.linspace(-1.0, 1.0, self.STANDARD_FACE_SIZE)
         grid_x, grid_y = np.meshgrid(coordinates, coordinates)
@@ -81,6 +79,8 @@ class GlobalFFTPreController:
         landmarker'in urettigi yuz listesidir. FFT hicbir zaman tam kareye
         uygulanmaz.
         """
+        self._clear_latest_fft_data()
+
         if len(detected_faces) != 1:
             self._register_invalid_frame()
             reason = "one detected face required"
@@ -88,7 +88,16 @@ class GlobalFFTPreController:
                 reason = "multiple faces detected"
             return self._unavailable_result(reason)
 
-        face_box = detected_faces[0].box
+        return self.analyze_face_box(frame, detected_faces[0].box)
+
+    def analyze_face_box(self, frame, face_box):
+        """Herhangi bir tespiticinin verdigi yuz kutusunu analiz eder.
+
+        Bu giris noktasi MediaPipe veya baska bir makine ogrenmesi modeline
+        bagli degildir. Yuz kutusu UI, klasik bir tespit yontemi veya baska bir
+        analiz asamasi tarafindan saglanabilir.
+        """
+        self._clear_latest_fft_data()
         quality_reason, face_region = self._get_quality_checked_face(
             frame,
             face_box,
@@ -98,6 +107,7 @@ class GlobalFFTPreController:
             self._register_invalid_frame()
             return self._unavailable_result(quality_reason)
 
+        self.latest_face_crop = face_region.copy()
         standardized_face = self._standardize_face(face_region)
         score, metrics = self._calculate_fft_score(standardized_face)
         attack_type = self._estimate_attack_type(metrics)
@@ -110,6 +120,13 @@ class GlobalFFTPreController:
         self.low_score_streak = 0
         self.invalid_frame_streak = 0
         self.warning_is_active = False
+        self._clear_latest_fft_data()
+
+    def _clear_latest_fft_data(self):
+        self.latest_face_crop = None
+        self.latest_shifted_fft = None
+        self.latest_power_spectrum = None
+        self.latest_log_spectrum = None
 
     def _get_quality_checked_face(self, frame, face_box):
         frame_height, frame_width = frame.shape[:2]
@@ -180,6 +197,12 @@ class GlobalFFTPreController:
         fft_result = np.fft.fftshift(np.fft.fft2(standardized_face))
         power_spectrum = np.abs(fft_result) ** 2
         log_spectrum = np.log1p(power_spectrum).astype(np.float32)
+
+        # Bunlar yeni bir FFT hesabi degildir. Mevcut analitik ara degerler,
+        # yalnizca ayni karenin gorsellestirilebilmesi icin disari acilir.
+        self.latest_shifted_fft = fft_result
+        self.latest_power_spectrum = power_spectrum
+        self.latest_log_spectrum = log_spectrum
 
         analysis_mask = (
             (self.radius_map >= 0.08)
@@ -396,174 +419,3 @@ class GlobalFFTPreController:
             "",
             False,
         )
-
-
-class FFTPreControlApplication(FaceQualityApplication):
-    """Mevcut uygulamaya FFT on kontrolunu minimal olarak ekler."""
-
-    def __init__(self):
-        super().__init__()
-        self.fft_pre_controller = GlobalFFTPreController()
-        self.latest_fft_result = None
-
-    def ft_pre_control(self, frame, detected_faces):
-        """Diger pre-controller'larin da cagirabilecegi ince giris noktasi."""
-        return self.fft_pre_controller.ft_pre_control(
-            frame,
-            detected_faces,
-        )
-
-    def process_frame(self, camera_frame):
-        analysis_frame = self.prepare_frame(camera_frame)
-        timestamp_ms = time.monotonic_ns() // 1_000_000
-
-        detected_faces = self.face_landmarker.detect_faces(
-            analysis_frame,
-            timestamp_ms,
-        )
-
-        # Yuz konumu belli olur olmaz, mevcut kalite/hizalama ve sonuc uretme
-        # adimlarindan once FFT on kontrolu calisir.
-        fft_result = self.ft_pre_control(
-            analysis_frame,
-            detected_faces,
-        )
-        self.latest_fft_result = fft_result
-
-        face_analysis = self.analyze_single_face(
-            analysis_frame,
-            detected_faces,
-        )
-        analysis_result = self.create_analysis_result(
-            len(detected_faces),
-            face_analysis,
-        )
-
-        display_frame = analysis_frame.copy()
-        self.draw_detected_faces(display_frame, detected_faces)
-        self.draw_analysis_information(
-            display_frame,
-            len(detected_faces),
-            face_analysis,
-        )
-        self.draw_fft_information(display_frame, fft_result)
-
-        return FrameProcessingResult(
-            display_frame,
-            face_analysis.face_image,
-            analysis_result,
-        )
-
-    def draw_fft_information(self, frame, fft_result):
-        score_text = "FFT anomaly score: unavailable"
-        if fft_result.score is not None:
-            score_text = "FFT anomaly score: %d/100" % round(
-                fft_result.score
-            )
-
-        quality_color = (0, 255, 0)
-        if fft_result.quality_status != "Sufficient":
-            quality_color = (0, 165, 255)
-
-        self.draw_text(frame, score_text, 185, (255, 255, 255), 0.55, 1)
-        self.draw_text(
-            frame,
-            "Frequency status: " + fft_result.status,
-            210,
-            (0, 255, 0) if fft_result.passed else (0, 165, 255),
-            0.55,
-            2,
-        )
-        self.draw_text(
-            frame,
-            "Possible attack: " + fft_result.attack_type,
-            235,
-            (255, 255, 255),
-            0.55,
-            1,
-        )
-        if fft_result.quality_status == "Sufficient":
-            self.draw_text(
-                frame,
-                "FFT quality: Sufficient",
-                260,
-                quality_color,
-                0.48,
-                1,
-            )
-        else:
-            quality_reason = fft_result.quality_status.replace(
-                "FFT analysis unavailable: insufficient image quality. ",
-                "",
-            )
-            self.draw_text(
-                frame,
-                "FFT analysis unavailable:",
-                260,
-                quality_color,
-                0.48,
-                1,
-            )
-            self.draw_text(
-                frame,
-                "insufficient image quality. " + quality_reason,
-                282,
-                quality_color,
-                0.48,
-                1,
-            )
-
-        if fft_result.warning:
-            self._draw_large_warning(frame, fft_result.warning)
-
-    def _draw_large_warning(self, frame, _warning_text):
-        frame_height, frame_width = frame.shape[:2]
-        overlay = frame.copy()
-        banner_top = max(300, frame_height // 2 - 75)
-        banner_bottom = min(frame_height - 45, banner_top + 150)
-        cv2.rectangle(
-            overlay,
-            (0, banner_top),
-            (frame_width, banner_bottom),
-            (0, 0, 180),
-            -1,
-        )
-        cv2.addWeighted(overlay, 0.82, frame, 0.18, 0, frame)
-
-        lines = [
-            "WARNING: POSSIBLE ATTACK",
-            "Replay or printed-photo pattern detected",
-            "FFT is an evidence signal, not mathematical certainty",
-        ]
-        font_scales = (1.05, 0.72, 0.55)
-        thicknesses = (3, 2, 1)
-
-        for index, line in enumerate(lines):
-            scale = font_scales[index]
-            thickness = thicknesses[index]
-            text_size = cv2.getTextSize(
-                line,
-                cv2.FONT_HERSHEY_SIMPLEX,
-                scale,
-                thickness,
-            )[0]
-            x = max(10, (frame_width - text_size[0]) // 2)
-            y = banner_top + 42 + index * 40
-            cv2.putText(
-                frame,
-                line,
-                (x, y),
-                cv2.FONT_HERSHEY_SIMPLEX,
-                scale,
-                (255, 255, 255),
-                thickness,
-            )
-
-
-def main():
-    application = FFTPreControlApplication()
-    application.run()
-
-
-if __name__ == "__main__":
-    main()
