@@ -275,9 +275,36 @@ class GlobalFFTPreController:
         maximum_entropy = math.log(max(2, analysis_values.size))
         normalized_entropy = entropy / maximum_entropy
 
-        spectral_slope = self._calculate_spectral_slope(power_spectrum)
-        if spectral_slope is None or not math.isfinite(spectral_slope):
+        slope_fit = self._calculate_spectral_slope(power_spectrum)
+        if slope_fit is None or not math.isfinite(slope_fit["slope"]):
             return None
+
+        mean_power = float(np.mean(analysis_values))
+        spectral_flatness = float(
+            np.exp(np.mean(np.log(analysis_values + 1e-12)))
+            / (mean_power + 1e-12)
+        )
+        centered_power = analysis_values - mean_power
+        variance = float(np.mean(centered_power ** 2))
+        spectral_kurtosis = float(
+            np.mean(centered_power ** 4) / (variance ** 2 + 1e-12)
+        )
+        order = np.argsort(selected_radii)
+        cumulative_energy = np.cumsum(analysis_values[order])
+        rolloff_index = int(
+            np.searchsorted(
+                cumulative_energy,
+                0.85 * total_energy,
+                side="left",
+            )
+        )
+        rolloff_index = min(rolloff_index, order.size - 1)
+        spectral_rolloff_85 = float(selected_radii[order[rolloff_index]])
+        peak_metrics = self._dominant_symmetric_peak_metrics(
+            power_spectrum,
+            masks["analysis"],
+            total_energy,
+        )
 
         return {
             "low_frequency_energy_ratio": float(low_ratio),
@@ -285,7 +312,12 @@ class GlobalFFTPreController:
             "high_frequency_energy_ratio": float(high_ratio),
             "spectral_centroid": spectral_centroid,
             "spectral_entropy": float(normalized_entropy),
-            "spectral_slope": spectral_slope,
+            "spectral_slope": slope_fit["slope"],
+            "spectral_slope_fit_mad": slope_fit["fit_mad"],
+            "spectral_flatness": spectral_flatness,
+            "spectral_rolloff_85_radius": spectral_rolloff_85,
+            "spectral_kurtosis_pearson": spectral_kurtosis,
+            **peak_metrics,
             "total_spectral_energy": total_energy,
             "high_to_low_energy_ratio": float(
                 high_energy / (low_energy + 1e-12)
@@ -319,12 +351,54 @@ class GlobalFFTPreController:
 
         log_radius = np.log(np.asarray(radial_centers, dtype=np.float64))
         log_power = np.log(np.asarray(radial_means, dtype=np.float64))
-        centered_radius = log_radius - float(log_radius.mean())
-        denominator = float(np.sum(centered_radius ** 2))
-        if denominator <= 1e-12:
+        delta_x = log_radius[None, :] - log_radius[:, None]
+        delta_y = log_power[None, :] - log_power[:, None]
+        upper_triangle = np.triu(
+            np.ones(delta_x.shape, dtype=bool),
+            k=1,
+        )
+        valid = upper_triangle & (np.abs(delta_x) > 1e-12)
+        if not np.any(valid):
             return None
-        centered_power = log_power - float(log_power.mean())
-        return float(np.sum(centered_radius * centered_power) / denominator)
+        slope = float(np.median(delta_y[valid] / delta_x[valid]))
+        intercept = float(np.median(log_power - slope * log_radius))
+        residuals = log_power - (slope * log_radius + intercept)
+        fit_mad = float(
+            np.median(np.abs(residuals - np.median(residuals)))
+        )
+        return {"slope": slope, "fit_mad": fit_mad}
+
+    def _dominant_symmetric_peak_metrics(
+        self,
+        power_spectrum,
+        analysis_mask,
+        total_energy,
+    ):
+        candidates = np.where(analysis_mask, power_spectrum, -np.inf)
+        flat_index = int(np.argmax(candidates))
+        peak_y, peak_x = np.unravel_index(
+            flat_index,
+            power_spectrum.shape,
+        )
+        peak_energy = float(power_spectrum[peak_y, peak_x])
+        height, width = power_spectrum.shape
+        symmetric_y = (2 * (height // 2) - peak_y) % height
+        symmetric_x = (2 * (width // 2) - peak_x) % width
+        symmetric_energy = float(
+            power_spectrum[symmetric_y, symmetric_x]
+        )
+        amplitude_symmetry = min(peak_energy, symmetric_energy) / (
+            max(peak_energy, symmetric_energy) + 1e-12
+        )
+        return {
+            "dominant_non_dc_peak_ratio": peak_energy / total_energy,
+            "dominant_non_dc_peak_coordinate": [int(peak_x), int(peak_y)],
+            "dominant_symmetric_pair_energy_ratio": (
+                peak_energy + symmetric_energy
+            )
+            / total_energy,
+            "dominant_pair_amplitude_symmetry": float(amplitude_symmetry),
+        }
 
     def _experimental_score(self, features):
         weighted_deviation = 0.0

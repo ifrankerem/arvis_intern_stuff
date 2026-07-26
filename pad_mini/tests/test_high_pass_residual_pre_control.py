@@ -276,7 +276,9 @@ class HighPassResidualAnalysisTests(unittest.TestCase):
                 "RESIDUAL_DEBUG_DIRECTORY",
                 output_directory,
             ):
-                application = ModelFreePreControlApplication()
+                application = ModelFreePreControlApplication(
+                    enable_face_detection=False
+                )
                 application.process_frame(frame)
                 result = application.latest_pre_control_results["residual"]
                 with redirect_stdout(io.StringIO()):

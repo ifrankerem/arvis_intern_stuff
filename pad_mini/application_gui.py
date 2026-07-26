@@ -627,14 +627,16 @@ class FaceQualityGui:
         if selected_mode == self.PRE_CONTROL_MODE:
             self.mode_description.configure(
                 text=(
-                    "Sabit yüz kılavuzunda model-free matematiksel "
-                    "PreControl çalışır. MediaPipe ve model dosyası yüklenmez."
+                    "MediaPipe yalnızca kararlı yüz ROI takibi için kullanılır; "
+                    "canlılık kararı tamamen model-free matematiksel "
+                    "PreControl ölçümlerinden üretilir."
                 )
             )
-            self.quality_value.set("Bu modda kapalı")
-            self.alignment_value.set("Bu modda kapalı")
+            self.quality_value.set("Yüz tespiti bekleniyor")
+            self.alignment_value.set("Karar dışında")
             self.metrics_value.set(
-                "Yüzünü ekrandaki sabit kılavuzun içine yerleştir."
+                "Turkuaz yüz kutusu otomatik takip edilir ve tüm "
+                "PreControl denetimleri bu ROI üzerinde çalışır."
             )
             self.pre_control_value.set("PreControl: Bekleniyor")
             save_state = "disabled"
@@ -673,7 +675,12 @@ class FaceQualityGui:
                 ModelFreePreControlApplication,
             )
 
-            application = ModelFreePreControlApplication()
+            application = ModelFreePreControlApplication(
+                enable_face_detection=(
+                    config.MODEL_FREE_FACE_DETECTION_ENABLED
+                ),
+                runtime_mode=config.MODEL_FREE_GUI_RUNTIME_MODE,
+            )
         else:
             from face_quality_application import FaceQualityApplication
 
@@ -789,8 +796,8 @@ class FaceQualityGui:
         if self.camera is None:
             return
 
-        frame_was_read, camera_frame, frame_number = (
-            self.camera.read_latest(self.last_frame_number)
+        frame_was_read, camera_frame, frame_number, frame_metadata = (
+            self.camera.read_latest_with_metadata(self.last_frame_number)
         )
         if not frame_was_read or camera_frame is None:
             if self.camera.has_failed():
@@ -805,7 +812,10 @@ class FaceQualityGui:
 
         self.last_frame_number = frame_number
         try:
-            frame_result = self.application.process_frame(camera_frame)
+            frame_result = self.application.process_frame(
+                camera_frame,
+                frame_metadata=frame_metadata,
+            )
         except Exception as error:
             self.stop_camera()
             messagebox.showerror(
@@ -940,7 +950,7 @@ class FaceQualityGui:
         if fft_result is None or not getattr(fft_result, "available", False):
             return (
                 "FFT verisi bekleniyor\n"
-                "Yüzünüzü kılavuz içinde net ve iyi ışıkta tutun."
+                "Yüzünüzü turkuaz takip kutusunda net ve iyi ışıkta tutun."
             )
 
         features = getattr(fft_result, "raw_features", {})
@@ -1063,6 +1073,9 @@ class FaceQualityGui:
         if self.application is None:
             return
 
+        if self.mode_value.get() == self.PRE_CONTROL_MODE:
+            self._show_precontrol_face_tracking()
+
         results = self.application.latest_pre_control_results
         if not results:
             if self.mode_value.get() == self.MODEL_MODE:
@@ -1077,10 +1090,75 @@ class FaceQualityGui:
             "latest_combined_result",
             None,
         )
+        decision = getattr(
+            self.application,
+            "latest_precontrol_decision",
+            None,
+        )
         feedback_text, feedback_color = (
             self._plain_language_fusion_feedback(combined_result)
         )
-        lines = [feedback_text]
+        lines = []
+        if decision is not None:
+            decision_colors = {
+                "LIVE": self.SUCCESS,
+                "SUSPICIOUS": self.WARNING,
+                "HIGH_RISK": self.ERROR,
+                "INSUFFICIENT_QUALITY": self.WARNING,
+                "INSUFFICIENT_EVIDENCE": self.MUTED,
+                "UNSUPPORTED_CAPTURE": self.ERROR,
+            }
+            feedback_color = decision_colors.get(
+                decision.classification,
+                self.MUTED,
+            )
+            score_text = (
+                "%d/100" % round(decision.overall_risk_0_100)
+                if decision.overall_risk_0_100 is not None
+                else "N/A"
+            )
+            lines.extend(
+                [
+                    "PRECONTROL: %s | Risk: %s | Reliability: %.2f"
+                    % (
+                        decision.classification,
+                        score_text,
+                        decision.overall_reliability,
+                    ),
+                    decision.human_explanation,
+                    "Reason codes: "
+                    + (
+                        ", ".join(decision.reason_codes)
+                        if decision.reason_codes
+                        else "none"
+                    ),
+                    "",
+                    "Legacy mathematical fusion: " + feedback_text,
+                ]
+            )
+            attack_labels = {
+                "replay_screen_score": "Replay/screen",
+                "print_attack_score": "Print",
+                "recapture_score": "Recapture",
+                "planar_surface_score": "Planarity",
+                "physiological_absence_score": "Physiology absence",
+                "sensor_inconsistency_score": "Sensor inconsistency",
+            }
+            for attack_name, label in attack_labels.items():
+                attack = decision.attack_scores.get(attack_name)
+                if attack is None or not attack.supported:
+                    lines.append(label + ": unsupported")
+                else:
+                    lines.append(
+                        "%s: %d/100 | r=%.2f"
+                        % (
+                            label,
+                            round(attack.score_0_100),
+                            attack.reliability,
+                        )
+                    )
+        else:
+            lines.append(feedback_text)
         if combined_result is not None:
             score_summary = combined_result.score_summary
             lines.append(
@@ -1166,6 +1244,71 @@ class FaceQualityGui:
         self.pre_control_value.set("\n".join(lines))
         self.pre_control_label.configure(fg=feedback_color)
 
+    def _show_precontrol_face_tracking(self):
+        tracking = getattr(
+            self.application,
+            "latest_face_tracking_result",
+            None,
+        )
+        context = getattr(self.application, "latest_context", None)
+        if tracking is None:
+            self.quality_value.set("Yüz tespiti bekleniyor")
+            self.quality_label.configure(fg=self.MUTED)
+            return
+
+        status_values = {
+            "DETECTED": ("Yüz takip ediliyor", self.SUCCESS),
+            "HELD": ("Takip kısa süre korunuyor", self.WARNING),
+            "NO_FACE": ("Yüz bulunamadı", self.ERROR),
+            "MULTIPLE_FACES": ("Birden fazla yüz", self.ERROR),
+            "DETECTOR_ERROR": ("Yüz tespit hatası", self.ERROR),
+            "DETECTOR_UNAVAILABLE": ("Yüz tespiti kullanılamıyor", self.ERROR),
+        }
+        status_text, status_color = status_values.get(
+            tracking.status,
+            (tracking.status, self.MUTED),
+        )
+        if (
+            tracking.supported
+            and context is not None
+            and not context.face_quality_valid
+        ):
+            status_text += " • kalite yetersiz"
+            status_color = self.WARNING
+        elif (
+            context is not None
+            and context.capture_metadata.get("face_roi_edge_contact", False)
+        ):
+            status_text += " • kadraj kenarına yakın"
+            status_color = self.WARNING
+        self.quality_value.set(status_text)
+        self.quality_label.configure(fg=status_color)
+        self.alignment_value.set("ROI altyapısı • karar dışında")
+        self.alignment_label.configure(fg=self.MUTED)
+
+        if tracking.box is None:
+            detail = "Analiz için geçerli yüz ROI'si yok. " + tracking.reason
+        else:
+            detail = (
+                "Takip ROI: %d×%d px • güven %.2f"
+                % (
+                    tracking.box.width,
+                    tracking.box.height,
+                    tracking.reliability,
+                )
+            )
+            if context is not None and context.quality_reason:
+                detail += "\nKalite kapısı: " + context.quality_reason
+            elif (
+                context is not None
+                and context.capture_metadata.get(
+                    "face_roi_edge_contact",
+                    False,
+                )
+            ):
+                detail += "\nROI kenara değiyor; analiz güveni azaltıldı"
+        self.metrics_value.set(detail)
+
     def _fusion_score_summary_lines(self, score_summary):
         labels = (
             ("Current frame risk", "current_frame_score"),
@@ -1222,7 +1365,7 @@ class FaceQualityGui:
             ),
             "Inconclusive": (
                 "GENEL SONUÇ: Analiz için yeterli güvenilir veri yok. "
-                "Yüzü iyi ışıkta, net ve kılavuz içinde tekrar gösterin.",
+                "Yüzü iyi ışıkta ve turkuaz takip kutusunda tekrar gösterin.",
                 self.WARNING,
             ),
             "Uncalibrated": (

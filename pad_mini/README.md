@@ -1,18 +1,39 @@
 # Yüz Kalitesi Uygulaması
 
 Uygulama; canlı kamera önizlemesi, kamera seçimi, yüz kalitesi/hizalama
-durumları, FFT, DCT/blok, wavelet ve high-pass residual ön kontrol sonuçları ile
-kayıt düğmeleri içeren basit bir masaüstü arayüzüne sahiptir.
+durumları, FFT, DCT/blok, wavelet, high-pass residual ve
+autocorrelation/cepstrum ön kontrol sonuçları ile kayıt düğmeleri içeren basit
+bir masaüstü arayüzüne sahiptir.
+
+> Şema 3 güvenlik davranışı: Deployment kalibrasyonu yokken düşük deneysel
+> skor `LIVE` üretemez; sonuç `INSUFFICIENT_EVIDENCE` olur. Geçersiz kalite ve
+> desteklenmeyen girişlerde skor uydurulmaz.
+
+## Araştırma ve doğrulama belgeleri
+
+- `repository_audit.md`: kod değişikliklerinden önceki depo denetimi
+- `deterministic_method_catalog.md`: mevcut ve aday yöntemlerin matematiği
+- `literature_review.md` ve `source_traceability.md`: birincil kaynaklar ve kod eşlemesi
+- `precontrol_architecture.md`: ROI, arayüz, normalizasyon ve iki aşamalı füzyon
+- `implementation_priority.md`: P0/P1/P2/Reject kararı
+- `calibration_protocol.md`, `benchmark_protocol.md`, `ablation_plan.md`
+- `api_output_example.json` ve `limitations.md`
 
 ## Ön kontrol mimarisi
 
 Kamera açılmadan önce iki ayrı moddan biri seçilir:
 
 - **Model-free Pre-Control:** FFT ile Moiré/periyodik desen denetimleri çalışır.
-  MediaPipe import edilmez ve hiçbir model dosyası yüklenmez. Yüz bölgesi olarak
-  ekrandaki sabit kılavuz kullanılır; kişinin yüzünü bu alanı dolduracak şekilde
-  konumlandırması gerekir. Moiré denetimi yeni FFT hesaplamaz; aynı karenin
-  mevcut, kaydırılmış sayısal güç ve log spektrumlarını kullanır. DCT / Block
+  MediaPipe yalnızca yüz kutusunu bulma ve takip altyapısıdır; çıktısı liveness
+  veya saldırı skoruna katılmaz. Tespit kutusu EMA ile yumuşatılır ve kısa
+  kaçırmalarda 0,8 saniyeye kadar korunur. Sabit merkez dairesi gösterilmez;
+  bütün matematiksel denetimler tespit edilen turkuaz ROI kutusunda yapılır.
+  Yüz bulunamazsa sabit merkez bölgesinden skor üretilmez ve sonuç yetersiz
+  kalite olur. Geçerli detector ROI'sinin kadraj kenarına değmesi analizleri
+  kapatmaz; yöntem reliability değerleri `%25` azaltılır ve UI uyarı gösterir.
+  Moiré'nin global kolu aynı karenin mevcut kaydırılmış güç/log spektrumunu
+  paylaşır; local-patch kolu yalnızca küçük yüz parçalarında ek FFT hesaplar.
+  DCT / Block
   Analysis aynı standardize hizalanmış yüz crop'unun penceresiz gri temsilinde
   8×8 blok istatistiklerini inceler. Wavelet modülü aynı penceresiz crop'ta
   model-free çok-ölçekli doku analizi yapar. High-Pass Residual Analysis ise
@@ -21,7 +42,7 @@ Kamera açılmadan önce iki ayrı moddan biri seçilir:
   pre-control çalışmaz.
 
 FFT sınıfının `analyze_face_box(frame, face_box)` girişi modelden bağımsızdır;
-ileride sabit UI kılavuzu yerine başka bir model-free ROI yöntemi verilebilir.
+PreControl bu girişe yumuşatılmış landmark yüz kutusunu verir.
 
 ### Ortak matematiksel analiz context'i
 
@@ -33,10 +54,15 @@ FFT yalnızca context builder içinde hesaplanır; Global FFT, Moiré ve
 Radial/Angular modülleri aynı kompleks FFT, kaydırılmış FFT, magnitude, power ve
 analitik log-power dizilerini paylaşır.
 
-Model-free modda geometrik yüz hizalama veya pose modeli çalışmadığı için
-`aligned_face_crop` aynı guide ROI'yi gösterir, `alignment_applied=False` ve
+Model-free modda geometrik yüz hizalama çalışmadığı için
+`aligned_face_crop` tespit edilen ham yüz ROI'sinin kimlik alias'ıdır,
+`alignment_applied=False` ve
 `pose_alignment_valid=None` kalır. Bu alanlar ileride model-free bir hizalama
 yöntemi eklendiğinde veri akışını değiştirmeden doldurulabilir.
+
+Canlı GUI düşük gecikme için `FAST` modunu kullanır; `BALANCED` ve `RESEARCH`
+modları headless/debug çalışmaları için korunur. Seçim
+`MODEL_FREE_GUI_RUNTIME_MODE` ile değiştirilebilir.
 
 Bütün matematiksel modüller `ModelFreeAnalysisResult` döndürür. Ham özellikler,
 ham skor, stabilize skor, confidence, evidence, warning, debug verisi ve
@@ -45,11 +71,12 @@ kalibrasyon durumu ayrı alanlardır. Kalite veya spektrum geçersizse sonuç
 olur; eksik veri normal sıfır skoru olarak gösterilmez. Modüller bağımsız hata sınırlarında
 çalıştığı için bir modül hatası diğer analizleri ve kamera akışını durdurmaz.
 
-Planlanan altı matematiksel modülün enable/disable bayrakları, analiz boyutu,
+Yedi matematiksel modülün enable/disable bayrakları, analiz boyutu,
 FFT penceresi, kalite/frekans/zamansal eşikler, debug modu ve calibration path
 `config.py` içindeki tek model-free yapılandırma bölümündedir. Şu anda Global
-FFT, Moiré, Radial/Angular, DCT / Block Analysis, Wavelet ve High-Pass Residual
-Analysis etkin durumdadır. Tüm karar eşikleri deneysel olarak işaretlenmiştir.
+FFT, Moiré, Radial/Angular, Autocorrelation/Cepstrum, DCT / Block Analysis,
+Wavelet ve High-Pass Residual Analysis etkin durumdadır. Tüm karar eşikleri
+deneysel olarak işaretlenmiştir.
 
 ### Modül 1: Global FFT
 
@@ -60,11 +87,30 @@ yeniden dışarı açan küçük bir uyumluluk katmanıdır.
 Yeni modüller kendi ayrı dosyalarında aynı ortak context/result API'siyle
 eklenmelidir.
 
+Moiré modülü global spektruma ek olarak ham tespit ROI'sinde tek ölçekli yerel
+patch FFT uygular. Bir yerel desenin skor üretebilmesi için en az iki ayrı
+patch'te güçlü tepe, merkez simetrisi ve tutarlı baskın yön gerekir. Patch vote,
+top-score ortalaması, yön tutarlılığı ve patch ölçümleri ham feature olarak
+saklanır; `02_moire_local_heatmap.png` yalnızca bu ölçümlerden üretilir.
+
 Global FFT modülü ortak context'teki mevcut power spectrum'u kullanır; yeni FFT
 veya resize yapmaz. DC merkezinin dışındaki yapılandırılabilir low, middle ve
 high radial bantlardan şu feature'ları çıkarır: üç bandın enerji oranları,
-spectral centroid, normalize spectral entropy, log-log radial spectral slope,
-total spectral energy ve high-to-low energy ratio.
+spectral centroid, normalize spectral entropy, spectral flatness, %85 roll-off,
+kurtosis, robust log-log radial spectral slope/fit MAD, dominant non-DC ve
+simetrik-pair enerjisi, total spectral energy ve high-to-low energy ratio.
+
+FFT penceresi ablation için Hann, Hamming, Tukey ve `none` seçeneklerini
+destekler; varsayılan Hann'dır.
+
+### Modül 3b: Autocorrelation / Cepstrum
+
+`periodicity_pre_control.py`, tespit edilen ham yüz ROI'sinin high-pass residual'ında
+Wiener–Khinchin 2B autocorrelation ve real cepstrum hesaplar. Merkez dışı peak
+oranı/prominence, dominant lag/quefrency, iki domain'in period agreement değeri,
+iki patch ölçeğinde spatial vote ve lattice regularity ham ölçümler olarak
+saklanır. Autocorrelation, cepstrum ve patch heatmap gerçek ölçümlerden üretilir.
+Bu modül FFT/Moiré'den bağımsız tam oy almaz; aynı `frequency` ailesine girer.
 
 Henüz gerçek bir baseline calibration dosyası olmadığı için skor modu
 `experimental`, `calibrated=False` durumundadır. Provisional feature aralıkları
@@ -231,7 +277,7 @@ final fusion bu izi yerel DCT tutarsızlığı ve FFT geniş-bant dağılımı i
 birlikte tek bir çapraz-yöntem sunum artefaktı olarak değerlendirir. Clipping
 tek başına saldırı skoru üretmez; sert ışık ve hatalı pozlama da aynı izi
 oluşturabilir. Bu sunum kanalı iki-aile ağırlıklı güncel kare skorunun yerine
-geçmez; yalnızca altı ROI modülünden türetilen ayrı temporal sunum kararına
+geçmez; yalnızca yedi ROI modülünden türetilen ayrı temporal sunum kararına
 girer.
 
 Clipping üretmeyen ekranlar için ikinci yol, FFT orta/yüksek bant enerjisini
@@ -248,11 +294,11 @@ görülmesi uyarıyı açabilir ve kısa odak kayıplarında uyarı altı ardı�
 karesine kadar korunur. Böylece tek kare sıçramaları filtrelenirken ekran
 dokusunun autofocus ile aralıklı kaybolması normal kabul edilmez.
 
-Tam kamera karesi yalnızca kamera görüntüsü, yüz kılavuzu/crop üretimi,
+Tam kamera karesi yalnızca kamera görüntüsü, tespit edilen yüz crop'unun üretimi,
 görselleştirme ve debug kaydı için tutulur. Telefon, tablet veya monitör
 çerçevesi; bezel, dikdörtgen, paralel arka plan çizgileri ve diğer tam-kare
 geometri öğeleri fraud skoruna, kanıta veya temporal geçmişe dahil edilmez.
-Final karar yalnızca yüz ROI'sindeki altı matematiksel modülün iki aileli
+Legacy combined karar yalnızca yüz ROI'sindeki yedi matematiksel modülün iki aileli
 füzyonu ve bu modüllerden türetilen frekans/doku kanıtlarını kullanır.
 
 Kalibrasyon yolu proje kökündeki `model_free_calibration.json` dosyasıdır.
@@ -279,6 +325,7 @@ zorunludur:
       "fft": 1.0,
       "moire": 1.0,
       "radial_angular": 1.0,
+      "periodicity": 1.0,
       "dct_block": 1.0,
       "wavelet": 1.0,
       "residual": 1.0
@@ -315,16 +362,16 @@ edilmelidir.
 Sonuç kesin bir canlılık veya sahte yüz sınıflandırması değildir. Saç/sakal,
 çizgili kıyafet, desenli arka plan, panjur, JPEG sıkıştırması, kamera
 keskinleştirmesi ve yeniden boyutlandırma da periyodik frekans tepeleri
-üretebilir. Altı yöntemin yüz ROI'sindeki analizinde kullanılan Hann penceresi
+üretebilir. Frekans yöntemlerinin yüz ROI'sindeki analizinde kullanılan Hann penceresi
 ve konservatif zamansal kapı bu yanlış pozitifleri azaltır. Görünür ekran
 kenarları veya arka plandaki paralel çizgiler karar girdisi değildir.
 
 Model-free pre-control çalışırken **Tüm Debug Çıktılarını Kaydet (1 Kare)**
 düğmesi veya `s` tuşu, `model_free_debug/analysis_<timestamp>/` altında tek bir
-klasör oluşturur. Bu klasörde yüz girişleri, altı modülün görselleri, bütün ham
+klasör oluşturur. Bu klasörde yüz girişleri, yedi modülün görselleri, bütün ham
 feature değerleri, raw/stabilized modül skorları, iki grup skoru, combined skor,
 kalite değerleri, configuration threshold'ları ve final evidence listesi yer
-alır. Ham tam kamera karesi, aynalanmış analiz karesi ve kılavuz bounding-box
+alır. Ham tam kamera karesi, aynalanmış analiz karesi ve takip edilen yüz ROI
 koordinatları yalnızca yeniden üretilebilirlik, görsel inceleme ve crop
 doğrulaması için saklanır; fraud skoruna girmez. Aynı içerik machine-readable
 JSON ve human-readable TXT raporuyla kaydedilir. Sürekli açık kalan ayrı OpenCV

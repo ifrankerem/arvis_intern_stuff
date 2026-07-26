@@ -62,6 +62,81 @@ class FusionScoreSummary:
 
 
 @dataclass
+class ModelFreeROI:
+    """One named ROI and the provenance required to interpret it safely."""
+
+    name: str
+    image: Optional[np.ndarray]
+    frame_box: Optional[Tuple[int, int, int, int]]
+    mask: Optional[np.ndarray] = None
+    coordinate_space: str = "analysis_frame"
+    transform_history: List[str] = field(default_factory=list)
+    semantic_basis: str = "guide_relative"
+    valid: bool = True
+    reason: Optional[str] = None
+
+    def provenance(self):
+        return {
+            "name": self.name,
+            "frame_box": self.frame_box,
+            "coordinate_space": self.coordinate_space,
+            "transform_history": list(self.transform_history),
+            "semantic_basis": self.semantic_basis,
+            "valid": bool(self.valid),
+            "reason": self.reason,
+            "dimensions": (
+                None
+                if self.image is None
+                else (int(self.image.shape[1]), int(self.image.shape[0]))
+            ),
+            "has_mask": self.mask is not None,
+        }
+
+
+@dataclass(frozen=True)
+class MethodResult:
+    """Canonical deterministic method contract used by new integrations.
+
+    Legacy analyzers continue to return ``ModelFreeAnalysisResult``. Its
+    ``to_method_result`` adapter exposes this contract without changing the
+    established 0-100 score fields consumed by the GUI and fusion code.
+    """
+
+    method_name: str
+    evidence_family: str
+    attack_targets: List[str]
+    supported: bool
+    raw_metrics: Dict[str, Any]
+    normalized_score: float
+    reliability: float
+    triggered: bool
+    reason_codes: List[str]
+    human_explanation: str
+    visualization_paths: Dict[str, str]
+    runtime_ms: float
+    warnings: List[str]
+
+    def to_dict(self):
+        return {
+            "method_name": self.method_name,
+            "evidence_family": self.evidence_family,
+            "attack_targets": list(self.attack_targets),
+            "supported": bool(self.supported),
+            "raw_metrics": dict(self.raw_metrics),
+            "normalized_score": float(
+                np.clip(self.normalized_score, 0.0, 1.0)
+            ),
+            "reliability": float(np.clip(self.reliability, 0.0, 1.0)),
+            "triggered": bool(self.triggered),
+            "reason_codes": list(self.reason_codes),
+            "human_explanation": self.human_explanation,
+            "visualization_paths": dict(self.visualization_paths),
+            "runtime_ms": max(0.0, float(self.runtime_ms)),
+            "warnings": list(self.warnings),
+        }
+
+
+@dataclass
 class ModelFreePreControlContext:
     """Bir kamera karesindeki ortak, yeniden kullanilabilir analiz verileri."""
 
@@ -91,6 +166,8 @@ class ModelFreePreControlContext:
     fft_window_type: str
     alignment_applied: bool = False
     standardized_aligned_face_crop: Optional[np.ndarray] = None
+    rois: Dict[str, ModelFreeROI] = field(default_factory=dict)
+    capture_metadata: Dict[str, Any] = field(default_factory=dict)
 
     @property
     def has_valid_fft(self):
@@ -118,6 +195,13 @@ class ModelFreeAnalysisResult:
     warnings: List[str] = field(default_factory=list)
     debug_data: Dict[str, Any] = field(default_factory=dict)
     calibrated: bool = False
+    evidence_family: str = "unassigned"
+    attack_targets: List[str] = field(default_factory=list)
+    reason_codes: List[str] = field(default_factory=list)
+    human_explanation: str = ""
+    visualization_paths: Dict[str, str] = field(default_factory=dict)
+    runtime_ms: float = 0.0
+    triggered: bool = False
 
     @property
     def display_name(self):
@@ -130,6 +214,47 @@ class ModelFreeAnalysisResult:
         if self.stabilized_score is not None:
             return self.stabilized_score
         return self.raw_score
+
+    @property
+    def supported(self):
+        return bool(self.available)
+
+    @property
+    def normalized_score(self):
+        score = self.score
+        if score is None:
+            return 0.0
+        try:
+            return float(np.clip(float(score) / 100.0, 0.0, 1.0))
+        except (TypeError, ValueError):
+            return 0.0
+
+    @property
+    def reliability(self):
+        try:
+            return float(np.clip(float(self.confidence or 0.0), 0.0, 1.0))
+        except (TypeError, ValueError):
+            return 0.0
+
+    def to_method_result(self):
+        explanation = self.human_explanation
+        if not explanation:
+            explanation = "; ".join(self.evidence) or self.status
+        return MethodResult(
+            method_name=self.module_name,
+            evidence_family=self.evidence_family,
+            attack_targets=list(self.attack_targets),
+            supported=self.supported,
+            raw_metrics=dict(self.raw_features),
+            normalized_score=self.normalized_score,
+            reliability=self.reliability,
+            triggered=bool(self.triggered),
+            reason_codes=list(self.reason_codes),
+            human_explanation=explanation,
+            visualization_paths=dict(self.visualization_paths),
+            runtime_ms=max(0.0, float(self.runtime_ms)),
+            warnings=list(self.warnings),
+        )
 
     @property
     def score_summary(self):
@@ -252,6 +377,10 @@ class ModelFreePreControlContextBuilder:
         face_box,
         aligned_face_crop=None,
         pose_alignment_valid=None,
+        capture_metadata=None,
+        quality_override_reason=None,
+        roi_semantic_basis="fixed_guide",
+        allow_frame_edge_contact=False,
     ):
         frame_height, frame_width = analysis_frame.shape[:2]
         safe_box = face_box.clamp_to_frame(frame_width, frame_height)
@@ -260,14 +389,18 @@ class ModelFreePreControlContextBuilder:
             safe_box,
             frame_width,
             frame_height,
+            allow_frame_edge_contact=allow_frame_edge_contact,
         )
+        if quality_override_reason is not None:
+            quality["valid"] = False
+            quality["reason"] = str(quality_override_reason)
 
         face_crop = quality["face_crop"]
         grayscale_crop = quality["grayscale_crop"]
         alignment_applied = aligned_face_crop is not None
         if aligned_face_crop is None:
-            # Model-free guide ROI'sinde geometrik hizalama yoktur. Alan yine
-            # ortak API'de tutulur fakat pose gecerliligi bilinmiyor kalir.
+            # ROI'de geometrik hizalama yoktur. Alan ortak API'de kimlik
+            # alias'i olarak tutulur fakat pose gecerliligi bilinmiyor kalir.
             aligned_face_crop = face_crop
 
         context = ModelFreePreControlContext(
@@ -297,6 +430,15 @@ class ModelFreePreControlContextBuilder:
             log_magnitude_visualization=None,
             fft_window_type=config.MODEL_FREE_FFT_WINDOW_TYPE,
             alignment_applied=alignment_applied,
+            rois=self._build_roi_set(
+                analysis_frame,
+                safe_box,
+                face_crop,
+                aligned_face_crop,
+                alignment_applied,
+                roi_semantic_basis,
+            ),
+            capture_metadata=dict(capture_metadata or {}),
         )
 
         if not context.face_quality_valid:
@@ -339,7 +481,14 @@ class ModelFreePreControlContextBuilder:
         context.log_magnitude_visualization = log_magnitude_visualization
         return context
 
-    def _measure_quality(self, frame, safe_box, frame_width, frame_height):
+    def _measure_quality(
+        self,
+        frame,
+        safe_box,
+        frame_width,
+        frame_height,
+        allow_frame_edge_contact=False,
+    ):
         face_crop = frame[
             safe_box.y : safe_box.y + safe_box.height,
             safe_box.x : safe_box.x + safe_box.width,
@@ -362,6 +511,7 @@ class ModelFreePreControlContextBuilder:
             frame_height,
             blur,
             brightness,
+            allow_frame_edge_contact=allow_frame_edge_contact,
         )
         return self._quality_values(
             reason is None,
@@ -380,6 +530,7 @@ class ModelFreePreControlContextBuilder:
         frame_height,
         blur,
         brightness,
+        allow_frame_edge_contact=False,
     ):
         minimum_side = config.EXPERIMENTAL_MODEL_FREE_MINIMUM_FACE_SIDE
         if safe_box.width < minimum_side or safe_box.height < minimum_side:
@@ -394,12 +545,13 @@ class ModelFreePreControlContextBuilder:
         edge_margin = config.EXPERIMENTAL_MODEL_FREE_FRAME_EDGE_MARGIN_RATIO
         edge_x = int(frame_width * edge_margin)
         edge_y = int(frame_height * edge_margin)
-        if (
+        edge_contact = (
             safe_box.x <= edge_x
             or safe_box.y <= edge_y
             or safe_box.x + safe_box.width >= frame_width - edge_x
             or safe_box.y + safe_box.height >= frame_height - edge_y
-        ):
+        )
+        if edge_contact and not allow_frame_edge_contact:
             return "face partially outside frame"
 
         if blur < config.EXPERIMENTAL_MODEL_FREE_MINIMUM_BLUR_SCORE:
@@ -440,14 +592,186 @@ class ModelFreePreControlContextBuilder:
             fft_crop /= standard_deviation
         return fft_crop * self.fft_window
 
+    def _build_roi_set(
+        self,
+        frame,
+        face_box,
+        raw_face_crop,
+        aligned_face_crop,
+        alignment_applied,
+        roi_semantic_basis="fixed_guide",
+    ):
+        """Build relative ROIs and preserve how the parent ROI was obtained."""
+        frame_height, frame_width = frame.shape[:2]
+        rois = {}
+
+        def add_frame_crop(name, box, semantic_basis=None):
+            x, y, width, height = box
+            safe = FaceBox(x, y, width, height).clamp_to_frame(
+                frame_width,
+                frame_height,
+            )
+            image = frame[
+                safe.y : safe.y + safe.height,
+                safe.x : safe.x + safe.width,
+            ].copy()
+            valid = image.size > 0 and min(image.shape[:2]) >= 8
+            rois[name] = ModelFreeROI(
+                name=name,
+                image=image if valid else None,
+                frame_box=(safe.x, safe.y, safe.width, safe.height),
+                transform_history=["decoded_bgr", "mirrored_analysis_frame", "crop"],
+                semantic_basis=(
+                    semantic_basis
+                    if semantic_basis is not None
+                    else roi_semantic_basis + "_relative"
+                ),
+                valid=valid,
+                reason=None if valid else "ROI is empty or too small",
+            )
+            return rois[name]
+
+        raw_valid = raw_face_crop is not None and raw_face_crop.size > 0
+        raw_history = ["decoded_bgr", "mirrored_analysis_frame", "crop"]
+        rois["raw_face"] = ModelFreeROI(
+            name="raw_face",
+            image=raw_face_crop.copy() if raw_valid else None,
+            frame_box=(face_box.x, face_box.y, face_box.width, face_box.height),
+            transform_history=raw_history,
+            semantic_basis=roi_semantic_basis,
+            valid=raw_valid,
+            reason=None if raw_valid else "Face/guide ROI is empty",
+        )
+        aligned_valid = aligned_face_crop is not None and aligned_face_crop.size > 0
+        rois["aligned_face"] = ModelFreeROI(
+            name="aligned_face",
+            image=aligned_face_crop.copy() if aligned_valid else None,
+            frame_box=(face_box.x, face_box.y, face_box.width, face_box.height),
+            coordinate_space=(
+                "aligned_crop" if alignment_applied else "analysis_frame_crop"
+            ),
+            transform_history=(
+                raw_history + ["external_geometric_alignment"]
+                if alignment_applied
+                else raw_history + ["identity_alias_not_aligned"]
+            ),
+            semantic_basis=(
+                "external_alignment"
+                if alignment_applied
+                else roi_semantic_basis
+            ),
+            valid=aligned_valid,
+            reason=None if aligned_valid else "Aligned ROI is empty",
+        )
+
+        expand_x = int(round(face_box.width * 0.18))
+        expand_y = int(round(face_box.height * 0.18))
+        expanded = add_frame_crop(
+            "expanded_face",
+            (
+                face_box.x - expand_x,
+                face_box.y - expand_y,
+                face_box.width + 2 * expand_x,
+                face_box.height + 2 * expand_y,
+            ),
+            semantic_basis=roi_semantic_basis + "_with_boundary_context",
+        )
+        if expanded.valid and expanded.frame_box is not None:
+            ex, ey, ew, eh = expanded.frame_box
+            ring_mask = np.full((eh, ew), 255, dtype=np.uint8)
+            inner_left = max(0, face_box.x - ex)
+            inner_top = max(0, face_box.y - ey)
+            inner_right = min(ew, face_box.x + face_box.width - ex)
+            inner_bottom = min(eh, face_box.y + face_box.height - ey)
+            ring_mask[inner_top:inner_bottom, inner_left:inner_right] = 0
+            rois["background_ring"] = ModelFreeROI(
+                name="background_ring",
+                image=expanded.image.copy(),
+                mask=ring_mask,
+                frame_box=expanded.frame_box,
+                transform_history=list(expanded.transform_history),
+                semantic_basis="outside_" + roi_semantic_basis + "_ring",
+                valid=bool(np.count_nonzero(ring_mask)),
+                reason=None,
+            )
+        else:
+            rois["background_ring"] = ModelFreeROI(
+                name="background_ring",
+                image=None,
+                frame_box=None,
+                semantic_basis="outside_" + roi_semantic_basis + "_ring",
+                valid=False,
+                reason="Expanded ROI is unavailable",
+            )
+
+        relative_boxes = {
+            "forehead": (0.22, 0.10, 0.56, 0.23),
+            "left_cheek": (0.10, 0.47, 0.34, 0.27),
+            "right_cheek": (0.56, 0.47, 0.34, 0.27),
+            "nose": (0.37, 0.34, 0.26, 0.40),
+            "eyes": (0.12, 0.24, 0.76, 0.24),
+        }
+        for name, (rx, ry, rw, rh) in relative_boxes.items():
+            add_frame_crop(
+                name,
+                (
+                    face_box.x + int(round(rx * face_box.width)),
+                    face_box.y + int(round(ry * face_box.height)),
+                    max(1, int(round(rw * face_box.width))),
+                    max(1, int(round(rh * face_box.height))),
+                ),
+            )
+
+        rois["full_frame"] = ModelFreeROI(
+            name="full_frame",
+            image=frame,
+            frame_box=(0, 0, frame_width, frame_height),
+            transform_history=["decoded_bgr", "mirrored_analysis_frame"],
+            semantic_basis="full_frame",
+            valid=frame.size > 0,
+        )
+        return rois
+
     def _create_fft_window(self, analysis_size):
         window_type = config.MODEL_FREE_FFT_WINDOW_TYPE.lower()
         if window_type == "hann":
             window_1d = np.hanning(analysis_size)
-            return np.outer(window_1d, window_1d).astype(np.float32)
-        if window_type == "none":
-            return np.ones((analysis_size, analysis_size), dtype=np.float32)
-        raise ValueError("Unsupported FFT window type: " + window_type)
+        elif window_type == "hamming":
+            window_1d = np.hamming(analysis_size)
+        elif window_type == "tukey":
+            window_1d = self._tukey_window(
+                analysis_size,
+                config.MODEL_FREE_FFT_TUKEY_ALPHA,
+            )
+        elif window_type == "none":
+            window_1d = np.ones(analysis_size, dtype=np.float64)
+        else:
+            raise ValueError("Unsupported FFT window type: " + window_type)
+        return np.outer(window_1d, window_1d).astype(np.float32)
+
+    @staticmethod
+    def _tukey_window(length, alpha):
+        if length <= 1:
+            return np.ones(max(1, length), dtype=np.float64)
+        alpha = float(alpha)
+        if alpha <= 0.0:
+            return np.ones(length, dtype=np.float64)
+        if alpha >= 1.0:
+            return np.hanning(length)
+        x = np.linspace(0.0, 1.0, length)
+        window = np.ones(length, dtype=np.float64)
+        first = x < alpha / 2.0
+        last = x >= 1.0 - alpha / 2.0
+        window[first] = 0.5 * (
+            1.0 + np.cos(np.pi * (2.0 * x[first] / alpha - 1.0))
+        )
+        window[last] = 0.5 * (
+            1.0
+            + np.cos(
+                np.pi * (2.0 * x[last] / alpha - 2.0 / alpha + 1.0)
+            )
+        )
+        return window
 
     def _quality_values(
         self,

@@ -20,6 +20,8 @@ from high_pass_residual_pre_control import (
     HighPassResidualPreController,
     ResidualPreController,
 )
+from periodicity_pre_control import PeriodicityPreController
+from precontrol_decision import PreControlDecisionBuilder
 from mathematical_fusion import (
     MathematicalFusionController,
     MathematicalFusionPreController,
@@ -37,6 +39,8 @@ __all__ = [
     "WaveletPreController",
     "HighPassResidualPreController",
     "ResidualPreController",
+    "PeriodicityPreController",
+    "PreControlDecisionBuilder",
     "MathematicalFusionController",
     "MathematicalFusionPreController",
 ]

@@ -26,6 +26,14 @@ UPPER_LIP_CENTER_INDEX = 13
 LOWER_LIP_CENTER_INDEX = 14
 
 
+class FaceROIDetection:
+    """PreControl ROI takibi icin gereken en kucuk landmark sonucu."""
+
+    def __init__(self, box, landmarks):
+        self.box = box
+        self.landmarks = landmarks
+
+
 class FaceLandmarker:
     """MediaPipe modelini calistirir ve yuz verilerini donusturur."""
 
@@ -34,6 +42,10 @@ class FaceLandmarker:
         model_path,
         maximum_faces,
         mirrored_input,
+        minimum_detection_confidence=0.5,
+        minimum_presence_confidence=0.5,
+        minimum_tracking_confidence=0.5,
+        roi_only=False,
     ):
         if not model_path.exists():
             message = "Yuz landmark modeli bulunamadi: " + str(model_path)
@@ -47,11 +59,11 @@ class FaceLandmarker:
             base_options=base_options,
             running_mode=mp.tasks.vision.RunningMode.VIDEO,
             num_faces=maximum_faces,
-            min_face_detection_confidence=0.5,
-            min_face_presence_confidence=0.5,
-            min_tracking_confidence=0.5,
-            output_face_blendshapes=True,
-            output_facial_transformation_matrixes=True,
+            min_face_detection_confidence=minimum_detection_confidence,
+            min_face_presence_confidence=minimum_presence_confidence,
+            min_tracking_confidence=minimum_tracking_confidence,
+            output_face_blendshapes=not roi_only,
+            output_facial_transformation_matrixes=not roi_only,
         )
 
         self.landmarker = (
@@ -60,6 +72,7 @@ class FaceLandmarker:
             )
         )
         self.mirrored_input = mirrored_input
+        self.roi_only = bool(roi_only)
 
     def detect_faces(self, frame, timestamp_ms):
         rgb_frame = cv2.cvtColor(frame, cv2.COLOR_BGR2RGB)
@@ -78,6 +91,23 @@ class FaceLandmarker:
 
         for face_index in range(len(raw_result.face_landmarks)):
             normalized_landmarks = raw_result.face_landmarks[face_index]
+            if self.roi_only:
+                landmarks = self.convert_landmarks_to_pixels(
+                    normalized_landmarks,
+                    frame.shape[1],
+                    frame.shape[0],
+                )
+                detected_faces.append(
+                    FaceROIDetection(
+                        self.create_face_box(
+                            landmarks,
+                            frame.shape[1],
+                            frame.shape[0],
+                        ),
+                        landmarks,
+                    )
+                )
+                continue
             blendshapes = raw_result.face_blendshapes[face_index]
             transformation_matrix = (
                 raw_result.facial_transformation_matrixes[face_index]

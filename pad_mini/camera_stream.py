@@ -16,10 +16,15 @@ class LatestFrameCamera:
         self.capture = self._open_capture(source)
         self.lock = threading.Lock()
         self.latest_frame = None
+        self.latest_metadata = None
         self.frame_number = 0
         self.consecutive_errors = 0
         self.running = False
         self.reader_thread = None
+        self.nominal_fps = self._finite_positive(
+            self.capture.get(cv2.CAP_PROP_FPS)
+        )
+        self.previous_acquisition_monotonic_s = None
 
     def is_opened(self):
         return self.capture.isOpened()
@@ -44,6 +49,25 @@ class LatestFrameCamera:
                 return False, None, previous_frame_number
 
             return True, self.latest_frame, self.frame_number
+
+    def read_latest_with_metadata(self, previous_frame_number):
+        """Return the newest frame plus additive capture provenance.
+
+        ``read_latest`` remains unchanged for callers that rely on its
+        established three-value return signature.
+        """
+        with self.lock:
+            if self.latest_frame is None:
+                return False, None, previous_frame_number, None
+            if self.frame_number == previous_frame_number:
+                return False, None, previous_frame_number, None
+
+            metadata = dict(self.latest_metadata or {})
+            metadata["frames_skipped_by_consumer"] = max(
+                0,
+                int(self.frame_number - previous_frame_number - 1),
+            )
+            return True, self.latest_frame, self.frame_number, metadata
 
     def has_failed(self):
         return (
@@ -75,9 +99,78 @@ class LatestFrameCamera:
                 continue
 
             self.consecutive_errors = 0
+            acquisition_monotonic_s = time.monotonic()
+            acquisition_wall_time_s = time.time()
+            interarrival_s = None
+            if self.previous_acquisition_monotonic_s is not None:
+                interarrival_s = (
+                    acquisition_monotonic_s
+                    - self.previous_acquisition_monotonic_s
+                )
+            self.previous_acquisition_monotonic_s = acquisition_monotonic_s
+            source_position_ms = self._finite_nonnegative(
+                self.capture.get(cv2.CAP_PROP_POS_MSEC)
+            )
+            metadata = {
+                "frame_number": self.frame_number + 1,
+                "acquisition_monotonic_s": acquisition_monotonic_s,
+                "acquisition_wall_time_s": acquisition_wall_time_s,
+                "interarrival_s": interarrival_s,
+                "nominal_fps": self.nominal_fps,
+                "source_position_ms": source_position_ms,
+                "source_kind": self._source_kind(),
+                "timestamp_basis": "decoder_arrival_monotonic",
+                "timestamp_reliability": self._timestamp_reliability(
+                    interarrival_s
+                ),
+                "decoded_frame": True,
+                "encoded_bytes_available": False,
+                "codec_or_jpeg_tables_available": False,
+            }
             with self.lock:
                 self.latest_frame = frame
+                self.latest_metadata = metadata
                 self.frame_number += 1
+
+    def _source_kind(self):
+        if isinstance(self.source, str):
+            if self.source.startswith(("http://", "https://")):
+                return "network_stream"
+            if self.source.startswith("/dev/video"):
+                return "camera_stream"
+            return "file_or_stream"
+        if isinstance(self.source, int):
+            return "camera_stream"
+        return "unknown"
+
+    def _timestamp_reliability(self, interarrival_s):
+        if interarrival_s is None or self.nominal_fps is None:
+            return "low"
+        expected = 1.0 / self.nominal_fps
+        relative_error = abs(interarrival_s - expected) / max(expected, 1e-9)
+        if relative_error <= 0.20:
+            return "medium"
+        return "low"
+
+    @staticmethod
+    def _finite_positive(value):
+        try:
+            numeric = float(value)
+        except (TypeError, ValueError):
+            return None
+        if numeric <= 0.0 or numeric != numeric or numeric == float("inf"):
+            return None
+        return numeric
+
+    @staticmethod
+    def _finite_nonnegative(value):
+        try:
+            numeric = float(value)
+        except (TypeError, ValueError):
+            return None
+        if numeric < 0.0 or numeric != numeric or numeric == float("inf"):
+            return None
+        return numeric
 
     def _open_capture(self, source):
         if isinstance(source, str) and source.startswith(("http://", "https://")):

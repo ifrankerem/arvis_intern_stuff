@@ -82,7 +82,7 @@ class FaceQualityApplication:
         self.face_landmarker.close()
         self.is_closed = True
 
-    def process_frame(self, camera_frame):
+    def process_frame(self, camera_frame, frame_metadata=None):
         analysis_frame = self.prepare_frame(camera_frame)
         timestamp_ms = time.monotonic_ns() // 1_000_000
 

@@ -34,9 +34,55 @@ MAXIMUM_JAW_OPEN_SCORE = 0.35
 # kamera, ekran, baski, mesafe ve isik verileriyle kalibre edilmelidir.
 MODEL_FREE_ANALYSIS_IMAGE_SIZE = 256
 MODEL_FREE_FFT_WINDOW_TYPE = "hann"
+MODEL_FREE_FFT_TUKEY_ALPHA = 0.25
 MODEL_FREE_DEBUG_MODE = False
-MODEL_FREE_ANALYSIS_SCHEMA_VERSION = 2
-MODEL_FREE_FUSION_CONFIGURATION_VERSION = 2
+MODEL_FREE_ANALYSIS_SCHEMA_VERSION = 3
+MODEL_FREE_FUSION_CONFIGURATION_VERSION = 3
+MODEL_FREE_RUNTIME_MODE = "BALANCED"
+# Canli GUI, pahali arastirma modullerini her karede calistirmak yerine dusuk
+# gecikmeli cekirdegi kullanir. Offline/debug akislar varsayilan BALANCED modu
+# kullanmaya devam eder.
+MODEL_FREE_GUI_RUNTIME_MODE = "FAST"
+MODEL_FREE_FACE_DETECTION_ENABLED = True
+# Eski detector'suz birim/debug cagrilarinin API uyumlulugu icindir. GUI bu
+# kutuyu cizmez veya detector etkin akista analiz ROI'si olarak kullanmaz.
+MODEL_FREE_GUIDE_DIAMETER_RATIO = 0.42
+MODEL_FREE_GUIDE_CENTER_Y_RATIO = 0.48
+MODEL_FREE_FACE_DETECTION_CONFIDENCE = 0.35
+MODEL_FREE_FACE_PRESENCE_CONFIDENCE = 0.40
+MODEL_FREE_FACE_TRACKING_CONFIDENCE = 0.35
+MODEL_FREE_FACE_BOX_SMOOTHING_ALPHA = 0.32
+MODEL_FREE_FACE_TRACK_HOLD_SECONDS = 0.80
+MODEL_FREE_FACE_BOX_HORIZONTAL_EXPANSION = 0.10
+MODEL_FREE_FACE_BOX_VERTICAL_EXPANSION = 0.12
+MODEL_FREE_FACE_BOX_JUMP_IOU_THRESHOLD = 0.12
+MODEL_FREE_FACE_EDGE_RELIABILITY_FACTOR = 0.75
+MODEL_FREE_MODE_MODULES = {
+    "FAST": (
+        "global_fft",
+        "moire",
+        "dct_block_compression",
+        "high_pass_residual",
+    ),
+    "BALANCED": (
+        "global_fft",
+        "moire",
+        "radial_angular_spectrum",
+        "periodicity",
+        "dct_block_compression",
+        "wavelet",
+        "high_pass_residual",
+    ),
+    "RESEARCH": (
+        "global_fft",
+        "moire",
+        "radial_angular_spectrum",
+        "periodicity",
+        "dct_block_compression",
+        "wavelet",
+        "high_pass_residual",
+    ),
+}
 # Screen/phone/monitor borders and other full-frame geometry are never used
 # as presentation-attack evidence. Kept as an explicit compatibility flag so
 # exported configuration snapshots document the disabled behavior.
@@ -48,10 +94,44 @@ MODEL_FREE_MODULE_ENABLED = {
     "global_fft": True,
     "moire": True,
     "radial_angular_spectrum": True,
+    "periodicity": True,
     "dct_block_compression": True,
     "wavelet": True,
     "high_pass_residual": True,
 }
+
+# Autocorrelation/cepstrum periodicity. These are transparent experimental
+# operating points for synthetic testing; deployment values must come from a
+# camera/PAI-specific calibration file and never from the final test split.
+EXPERIMENTAL_PERIODICITY_MINIMUM_SIDE = 96
+EXPERIMENTAL_PERIODICITY_MAXIMUM_SIDE = 384
+EXPERIMENTAL_PERIODICITY_RESIDUAL_SIGMA = 2.0
+EXPERIMENTAL_PERIODICITY_MINIMUM_RESIDUAL_STD = 0.20
+EXPERIMENTAL_PERIODICITY_UNSUPPORTED_CLIPPING = 0.35
+EXPERIMENTAL_PERIODICITY_MINIMUM_LAG_PIXELS = 4.0
+EXPERIMENTAL_PERIODICITY_MAXIMUM_LAG_RATIO = 0.35
+EXPERIMENTAL_PERIODICITY_PERIOD_TOLERANCE = 0.35
+EXPERIMENTAL_PERIODICITY_PATCH_SCALE_RATIOS = (0.25, 0.50)
+EXPERIMENTAL_PERIODICITY_TARGET_PATCH_COUNT = 20
+EXPERIMENTAL_PERIODICITY_AUTOCORRELATION_START = 0.12
+EXPERIMENTAL_PERIODICITY_AUTOCORRELATION_FULL = 0.48
+EXPERIMENTAL_PERIODICITY_CEPSTRUM_Z_START = 5.0
+EXPERIMENTAL_PERIODICITY_CEPSTRUM_Z_FULL = 18.0
+EXPERIMENTAL_PERIODICITY_PATCH_VOTE_START = 0.15
+EXPERIMENTAL_PERIODICITY_PATCH_VOTE_FULL = 0.65
+EXPERIMENTAL_PERIODICITY_PATCH_AC_MINIMUM = 0.16
+EXPERIMENTAL_PERIODICITY_PATCH_CEPSTRUM_Z_MINIMUM = 5.0
+EXPERIMENTAL_PERIODICITY_AUTOCORRELATION_WEIGHT = 0.32
+EXPERIMENTAL_PERIODICITY_CEPSTRUM_WEIGHT = 0.28
+EXPERIMENTAL_PERIODICITY_PATCH_VOTE_WEIGHT = 0.30
+EXPERIMENTAL_PERIODICITY_AGREEMENT_WEIGHT = 0.10
+EXPERIMENTAL_PERIODICITY_TRIGGER_SCORE = 70.0
+EXPERIMENTAL_PERIODICITY_SUPPORTING_SCORE = 45.0
+EXPERIMENTAL_PERIODICITY_REQUIRED_PATCH_VOTE = 0.25
+EXPERIMENTAL_PERIODICITY_REQUIRED_DOMAIN_AGREEMENT = 0.30
+EXPERIMENTAL_PERIODICITY_MAXIMUM_RELIABILITY = 0.60
+EXPERIMENTAL_PERIODICITY_HISTORY_SIZE = 10
+EXPERIMENTAL_PERIODICITY_INVALID_RESET_FRAMES = 4
 
 # Deneysel ortak yuz/ROI kalite kapisi.
 EXPERIMENTAL_MODEL_FREE_MINIMUM_FACE_SIDE = 96
@@ -179,6 +259,19 @@ EXPERIMENTAL_MOIRE_REQUIRED_SUSPICIOUS_FRAMES = 4
 EXPERIMENTAL_MOIRE_REQUIRED_RELEASE_FRAMES = 4
 EXPERIMENTAL_MOIRE_INVALID_RESET_FRAMES = 4
 EXPERIMENTAL_MOIRE_REGION_IOU_RESET_THRESHOLD = 0.45
+EXPERIMENTAL_MOIRE_LOCAL_PATCH_SIZE_RATIO = 0.15
+EXPERIMENTAL_MOIRE_LOCAL_PATCH_MINIMUM_SIZE = 40
+EXPERIMENTAL_MOIRE_LOCAL_PATCH_MAXIMUM_SIZE = 64
+EXPERIMENTAL_MOIRE_LOCAL_PATCH_INNER_MARGIN_RATIO = 0.08
+EXPERIMENTAL_MOIRE_LOCAL_PATCH_MAXIMUM_X_RATIO = 0.82
+EXPERIMENTAL_MOIRE_LOCAL_PATCH_MAXIMUM_Y_RATIO = 0.78
+EXPERIMENTAL_MOIRE_LOCAL_PATCH_MINIMUM_STD = 5.0
+EXPERIMENTAL_MOIRE_LOCAL_PATCH_STRONG_SCORE = 50.0
+EXPERIMENTAL_MOIRE_LOCAL_PATCH_MINIMUM_VOTES = 2
+EXPERIMENTAL_MOIRE_LOCAL_PATCH_TOP_COUNT = 3
+EXPERIMENTAL_MOIRE_LOCAL_PATCH_PEAK_WEIGHT = 0.70
+EXPERIMENTAL_MOIRE_LOCAL_PATCH_CONSISTENCY_WEIGHT = 0.30
+EXPERIMENTAL_MOIRE_LOCAL_SUPPORTING_SCORE = 45.0
 
 # Module 3: Deneysel radial ve angular spectrum ayarlari.
 # Bu profil araliklari bilimsel/evrensel esikler degildir; calibration verisi
@@ -684,13 +777,19 @@ EXPERIMENTAL_PRESENTATION_REQUIRED_RECOVERY_FRAMES = 6
 # a compatible mathematical_fusion section.
 MATHEMATICAL_FUSION_CONFIG = {
     "module_groups": {
-        "fft_family": ("fft", "moire", "radial_angular"),
+        "fft_family": (
+            "fft",
+            "moire",
+            "radial_angular",
+            "periodicity",
+        ),
         "local_transform": ("dct_block", "wavelet", "residual"),
     },
     "module_weights": {
-        "fft": 0.34,
-        "moire": 0.33,
-        "radial_angular": 0.33,
+        "fft": 0.25,
+        "moire": 0.30,
+        "radial_angular": 0.20,
+        "periodicity": 0.25,
         "dct_block": 0.34,
         "wavelet": 0.33,
         "residual": 0.33,
@@ -717,4 +816,51 @@ MATHEMATICAL_FUSION_CONFIG = {
     "invalid_reset_frames": 4,
     "region_iou_reset_threshold": 0.45,
     "module_evidence_score": 50.0,
+}
+
+# Stage-B attack fusion. Family weights express physical relevance, not
+# learned coefficients. They remain experimental until a calibration protocol
+# records a compatible deployment section.
+PRECONTROL_ATTACK_FUSION_CONFIG = {
+    "method_weights": {
+        "fft": 0.25,
+        "moire": 0.30,
+        "radial_angular": 0.20,
+        "periodicity": 0.25,
+        "dct_block": 1.0,
+        "wavelet": 0.50,
+        "residual": 0.50,
+    },
+    "attack_family_weights": {
+        "replay_screen_score": {
+            "frequency": 0.55,
+            "compression_recapture": 0.20,
+            "spatial_texture": 0.25,
+        },
+        "print_attack_score": {
+            "frequency": 0.15,
+            "compression_recapture": 0.45,
+            "spatial_texture": 0.40,
+        },
+        "recapture_score": {
+            "frequency": 0.40,
+            "compression_recapture": 0.35,
+            "spatial_texture": 0.25,
+        },
+        # These remain explicit unsupported outputs until their evidence
+        # families are implemented and calibrated.
+        "planar_surface_score": {},
+        "physiological_absence_score": {},
+        "sensor_inconsistency_score": {},
+    },
+    "expected_family_methods": {
+        "frequency": 4,
+        "compression_recapture": 1,
+        "spatial_texture": 2,
+    },
+    "suspicious_score": 50.0,
+    "high_risk_score": 75.0,
+    "minimum_decision_reliability": 0.35,
+    "minimum_live_reliability": 0.65,
+    "minimum_supported_families": 2,
 }

@@ -1,0 +1,101 @@
+{
+  "schema_version": 3,
+  "overall_risk_0_100": 67.4,
+  "overall_reliability": 0.46,
+  "uncertainty_0_100": 54.0,
+  "risk_interval_0_100": [31.004, 85.004],
+  "classification": "SUSPICIOUS",
+  "score_valid": true,
+  "calibrated": false,
+  "attack_scores": {
+    "replay_screen_score": {
+      "supported": true,
+      "score_0_100": 67.4,
+      "reliability": 0.46,
+      "contributing_families": [
+        "frequency",
+        "compression_recapture",
+        "spatial_texture"
+      ]
+    },
+    "print_attack_score": {
+      "supported": true,
+      "score_0_100": 48.2,
+      "reliability": 0.44,
+      "contributing_families": [
+        "frequency",
+        "compression_recapture",
+        "spatial_texture"
+      ]
+    },
+    "recapture_score": {
+      "supported": true,
+      "score_0_100": 58.7,
+      "reliability": 0.45,
+      "contributing_families": [
+        "frequency",
+        "compression_recapture",
+        "spatial_texture"
+      ]
+    },
+    "planar_surface_score": {
+      "supported": false,
+      "score_0_100": null,
+      "reliability": 0.0,
+      "contributing_families": []
+    },
+    "physiological_absence_score": {
+      "supported": false,
+      "score_0_100": null,
+      "reliability": 0.0,
+      "contributing_families": []
+    },
+    "sensor_inconsistency_score": {
+      "supported": false,
+      "score_0_100": null,
+      "reliability": 0.0,
+      "contributing_families": []
+    }
+  },
+  "reason_codes": [
+    "PERIODIC_LAG_AND_QUEFRENCY_PEAKS",
+    "UNCALIBRATED_SUSPICIOUS_EVIDENCE"
+  ],
+  "human_explanation": "SUSPICIOUS: highest supported risk is replay_screen at 67.4/100 with reliability 0.46. Frequency, compression/recapture and spatial-texture evidence contributed. Deployment calibration is absent, so LIVE is withheld.",
+  "methods": {
+    "periodicity": {
+      "method_name": "Autocorrelation / Cepstrum",
+      "evidence_family": "frequency",
+      "attack_targets": [
+        "replay_screen",
+        "print_attack",
+        "recapture"
+      ],
+      "supported": true,
+      "raw_metrics": {
+        "autocorrelation_peak_ratio": 0.49,
+        "cepstral_peak_prominence_z": 8.1,
+        "cross_domain_period_agreement": 0.72,
+        "patch_periodic_vote_ratio": 0.83,
+        "autocorrelation_dominant_period_pixels": 12.0
+      },
+      "normalized_score": 0.71,
+      "reliability": 0.6,
+      "triggered": true,
+      "reason_codes": [
+        "PERIODIC_LAG_AND_QUEFRENCY_PEAKS"
+      ],
+      "human_explanation": "Autocorrelation and cepstrum agree on repeated spatial structure across patches.",
+      "visualization_paths": {
+        "autocorrelation": "03b_autocorrelation_map.png",
+        "cepstrum": "03b_cepstrum_map.png",
+        "patch_heatmap": "03b_patch_periodicity_heatmap.png"
+      },
+      "runtime_ms": 8.7,
+      "warnings": [
+        "Experimental thresholds require device-specific calibration"
+      ]
+    }
+  },
+  "runtime_ms": 31.8
+}

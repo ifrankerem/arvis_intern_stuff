@@ -134,7 +134,10 @@ class MathematicalFusionTests(unittest.TestCase):
             self._context(),
         )
 
-        expected_fft_family = 75.0
+        weights = config.MATHEMATICAL_FUSION_CONFIG["module_weights"]
+        expected_fft_family = (
+            50.0 * weights["moire"] + 100.0 * weights["radial_angular"]
+        ) / (weights["moire"] + weights["radial_angular"])
         self.assertAlmostEqual(
             result.raw_features["fft_family_score"],
             expected_fft_family,
@@ -812,7 +815,9 @@ class MathematicalFusionTests(unittest.TestCase):
             "final_evidence": [],
             "final_warnings": [],
         }
-        application = ModelFreePreControlApplication()
+        application = ModelFreePreControlApplication(
+            enable_face_detection=False
+        )
         text_report = application._human_readable_report(report)
         application.shutdown()
 
@@ -861,7 +866,9 @@ class MathematicalFusionTests(unittest.TestCase):
             },
         )
 
-        application = ModelFreePreControlApplication()
+        application = ModelFreePreControlApplication(
+            enable_face_detection=False
+        )
         self.assertEqual(len(application.fusion_controller.score_history), 0)
         self.assertEqual(
             len(application.fusion_controller.presentation_score_history),
@@ -884,7 +891,9 @@ class MathematicalFusionTests(unittest.TestCase):
                 "MODEL_FREE_DEBUG_DIRECTORY",
                 debug_root,
             ):
-                application = ModelFreePreControlApplication()
+                application = ModelFreePreControlApplication(
+                    enable_face_detection=False
+                )
                 for _ in range(5):
                     application.process_frame(frame)
                 with redirect_stdout(io.StringIO()):
@@ -914,7 +923,10 @@ class MathematicalFusionTests(unittest.TestCase):
                     "display_score",
                 },
             )
-            self.assertEqual(set(report["modules"]), set(self.MODULE_NAMES))
+            self.assertEqual(
+                set(report["modules"]),
+                set(self.MODULE_NAMES) | {"periodicity"},
+            )
             for module in report["modules"].values():
                 self.assertIn("raw_features", module)
                 self.assertIn("raw_score", module)

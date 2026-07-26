@@ -1,4 +1,4 @@
-"""Herhangi bir yuz tespit modeli yuklemeden calisan pre-control modu."""
+"""Karar katmani model-free olan deterministik PreControl uygulamasi."""
 
 from datetime import datetime
 import csv
@@ -22,13 +22,78 @@ from radial_angular_pre_control import (
 from dct_block_pre_control import DCTBlockAnalysisPreController
 from wavelet_pre_control import WaveletAnalysisPreController
 from high_pass_residual_pre_control import HighPassResidualPreController
+from periodicity_pre_control import PeriodicityPreController
 from mathematical_fusion import MathematicalFusionController
+from precontrol_decision import PreControlDecisionBuilder
+from face_roi_tracker import StableFaceROITracker
 
 
 class ModelFreePreControlApplication:
-    """Sabit guide ROI'de model-free matematiksel analizleri calistirir."""
+    """Tespit edilen ROI'de model-free matematiksel analizleri calistirir.
 
-    def __init__(self):
+    MediaPipe etkinse yalnizca ROI bulma/takip altyapisi olarak kullanilir;
+    liveness veya presentation-attack kararina hicbir model cikisi verilmez.
+    """
+
+    def __init__(
+        self,
+        face_detector=None,
+        enable_face_detection=None,
+        runtime_mode=None,
+    ):
+        if enable_face_detection is None:
+            enable_face_detection = config.MODEL_FREE_FACE_DETECTION_ENABLED
+        self.face_detection_enabled = bool(enable_face_detection)
+        self.runtime_mode = (
+            str(runtime_mode).upper()
+            if runtime_mode is not None
+            else None
+        )
+        if (
+            self.runtime_mode is not None
+            and self.runtime_mode not in config.MODEL_FREE_MODE_MODULES
+        ):
+            raise ValueError(
+                "Unsupported model-free runtime mode: " + self.runtime_mode
+            )
+        self._owns_face_detector = False
+        if self.face_detection_enabled and face_detector is None:
+            from face_landmarker import FaceLandmarker
+
+            face_detector = FaceLandmarker(
+                config.MODEL_PATH,
+                config.MAXIMUM_FACE_COUNT,
+                config.MIRROR_CAMERA_IMAGE,
+                minimum_detection_confidence=(
+                    config.MODEL_FREE_FACE_DETECTION_CONFIDENCE
+                ),
+                minimum_presence_confidence=(
+                    config.MODEL_FREE_FACE_PRESENCE_CONFIDENCE
+                ),
+                minimum_tracking_confidence=(
+                    config.MODEL_FREE_FACE_TRACKING_CONFIDENCE
+                ),
+                roi_only=True,
+            )
+            self._owns_face_detector = True
+        self.face_detector = face_detector
+        self.face_roi_tracker = StableFaceROITracker(
+            face_detector if self.face_detection_enabled else None,
+            smoothing_alpha=config.MODEL_FREE_FACE_BOX_SMOOTHING_ALPHA,
+            hold_seconds=config.MODEL_FREE_FACE_TRACK_HOLD_SECONDS,
+            horizontal_expansion_ratio=(
+                config.MODEL_FREE_FACE_BOX_HORIZONTAL_EXPANSION
+            ),
+            vertical_expansion_ratio=(
+                config.MODEL_FREE_FACE_BOX_VERTICAL_EXPANSION
+            ),
+            jump_iou_threshold=(
+                config.MODEL_FREE_FACE_BOX_JUMP_IOU_THRESHOLD
+            ),
+            minimum_frame_margin_ratio=(
+                config.EXPERIMENTAL_MODEL_FREE_FRAME_EDGE_MARGIN_RATIO
+            ),
+        )
         self.context_builder = ModelFreePreControlContextBuilder()
         self.fft_pre_controller = GlobalFFTPreController()
         self.moire_pre_controller = MoirePeriodicPatternPreController()
@@ -38,7 +103,9 @@ class ModelFreePreControlApplication:
         self.dct_block_pre_controller = DCTBlockAnalysisPreController()
         self.wavelet_pre_controller = WaveletAnalysisPreController()
         self.residual_pre_controller = HighPassResidualPreController()
+        self.periodicity_pre_controller = PeriodicityPreController()
         self.fusion_controller = MathematicalFusionController()
+        self.decision_builder = PreControlDecisionBuilder()
         # Every application session starts with a clean fusion history. The
         # controller also resets itself if the schema/configuration signature
         # changes while the process is running.
@@ -49,6 +116,10 @@ class ModelFreePreControlApplication:
             "radial_angular": (
                 "radial_angular_spectrum",
                 self.radial_angular_pre_controller,
+            ),
+            "periodicity": (
+                "periodicity",
+                self.periodicity_pre_controller,
             ),
             "dct_block": (
                 "dct_block_compression",
@@ -65,23 +136,95 @@ class ModelFreePreControlApplication:
         }
         self.latest_pre_control_results = {}
         self.latest_combined_result = None
+        self.latest_precontrol_decision = None
         self.latest_context = None
         self.latest_face_image = None
         self.latest_fft_visualization = None
         self.latest_analysis_result = None
+        self.latest_face_tracking_result = None
         self.is_closed = False
 
-    def process_frame(self, camera_frame):
+    def process_frame(self, camera_frame, frame_metadata=None):
+        frame_started = time.perf_counter()
         analysis_frame = self.prepare_frame(camera_frame)
-        guide_box = self.create_guide_box(analysis_frame)
+        guide_box = (
+            FaceBox(0, 0, 0, 0)
+            if self.face_detection_enabled
+            else self.create_guide_box(analysis_frame)
+        )
         self.latest_face_image = None
         self.latest_fft_visualization = None
 
+        capture_metadata = dict(frame_metadata or {})
+        capture_metadata["model_free_runtime_mode"] = (
+            self.runtime_mode
+            or str(config.MODEL_FREE_RUNTIME_MODE).upper()
+        )
+        frame_timestamp = float(
+            capture_metadata.get(
+                "acquisition_monotonic_s",
+                time.monotonic(),
+            )
+        )
+        tracking_result = None
+        analysis_box = guide_box
+        quality_override_reason = None
+        roi_semantic_basis = "fixed_guide"
+        face_roi_edge_contact = False
+        if self.face_detection_enabled:
+            tracking_result = self.face_roi_tracker.update(
+                analysis_frame,
+                frame_timestamp,
+            )
+            if tracking_result.supported:
+                analysis_box = tracking_result.box
+                roi_semantic_basis = "detected_face_landmarks"
+                face_roi_edge_contact = self._box_touches_frame_edge(
+                    analysis_box,
+                    analysis_frame,
+                )
+            else:
+                quality_override_reason = tracking_result.reason
+                roi_semantic_basis = "no_detected_face"
+            capture_metadata.update(
+                {
+                    "face_roi_source": roi_semantic_basis,
+                    "face_detection_status": tracking_result.status,
+                    "face_detection_count": tracking_result.detection_count,
+                    "face_detection_fresh": (
+                        tracking_result.fresh_detection
+                    ),
+                    "face_tracking_reliability": (
+                        tracking_result.reliability
+                    ),
+                    "face_roi_edge_contact": face_roi_edge_contact,
+                    "face_detector_used_for_roi_only": True,
+                    "face_detector_confidence_used_as_pad_evidence": False,
+                }
+            )
+        else:
+            capture_metadata.update(
+                {
+                    "face_roi_source": roi_semantic_basis,
+                    "face_detection_status": "DISABLED",
+                    "face_roi_edge_contact": False,
+                    "face_detector_used_for_roi_only": False,
+                    "face_detector_confidence_used_as_pad_evidence": False,
+                }
+            )
+        self.latest_face_tracking_result = tracking_result
         context = self.context_builder.build(
-            time.time(),
+            frame_timestamp,
             camera_frame,
             analysis_frame,
-            guide_box,
+            analysis_box,
+            capture_metadata=capture_metadata,
+            quality_override_reason=quality_override_reason,
+            roi_semantic_basis=roi_semantic_basis,
+            allow_frame_edge_contact=(
+                tracking_result is not None
+                and tracking_result.supported
+            ),
         )
         self.latest_context = context
 
@@ -94,9 +237,25 @@ class ModelFreePreControlApplication:
             for result_key, (module_key, analyzer)
             in self.analysis_modules.items()
         }
+        fusion_started = time.perf_counter()
         self.latest_combined_result = self.fusion_controller.analyze(
             self.latest_pre_control_results,
             context,
+        )
+        self.latest_combined_result.runtime_ms = (
+            time.perf_counter() - fusion_started
+        ) * 1000.0
+        self.latest_combined_result.evidence_family = "fusion"
+        self.latest_combined_result.attack_targets = [
+            "replay_screen",
+            "print_attack",
+            "recapture",
+        ]
+        self.latest_precontrol_decision = self.decision_builder.build(
+            self.latest_pre_control_results,
+            context,
+            self.latest_combined_result,
+            runtime_ms=(time.perf_counter() - frame_started) * 1000.0,
         )
         fft_result = self.latest_pre_control_results["fft"]
         moire_result = self.latest_pre_control_results["moire"]
@@ -115,6 +274,8 @@ class ModelFreePreControlApplication:
             guide_box,
             fft_result,
             moire_result,
+            tracking_result=tracking_result,
+            analysis_box=analysis_box,
         )
 
         return FrameProcessingResult(
@@ -124,16 +285,29 @@ class ModelFreePreControlApplication:
         )
 
     def _run_analysis_module(self, module_key, analyzer, context):
-        if not config.MODEL_FREE_MODULE_ENABLED.get(module_key, False):
-            return ModelFreeAnalysisResult.unavailable(
+        started = time.perf_counter()
+        active_mode = self.runtime_mode or str(
+            config.MODEL_FREE_RUNTIME_MODE
+        ).upper()
+        mode_modules = config.MODEL_FREE_MODE_MODULES.get(active_mode, ())
+        if (
+            not config.MODEL_FREE_MODULE_ENABLED.get(module_key, False)
+            or module_key not in mode_modules
+        ):
+            result = ModelFreeAnalysisResult.unavailable(
                 analyzer.MODULE_NAME,
-                "module disabled by configuration",
+                "module disabled by configuration or runtime mode",
                 debug_data={"possible_attack": "none"},
                 calibrated=False,
             )
+            return self._apply_method_contract(
+                module_key,
+                result,
+                (time.perf_counter() - started) * 1000.0,
+            )
 
         try:
-            return analyzer.analyze(context)
+            result = analyzer.analyze(context)
         except Exception as error:
             # Bir opsiyonel matematik modulu diger modulleri veya kamera
             # dongusunu durdurmamalidir.
@@ -141,7 +315,7 @@ class ModelFreePreControlApplication:
                 "%s module failed: %s"
                 % (analyzer.MODULE_NAME, str(error))
             )
-            return ModelFreeAnalysisResult.unavailable(
+            result = ModelFreeAnalysisResult.unavailable(
                 analyzer.MODULE_NAME,
                 "module execution failed",
                 debug_data={
@@ -150,6 +324,96 @@ class ModelFreePreControlApplication:
                 },
                 calibrated=False,
             )
+        if (
+            result.available
+            and context.capture_metadata.get("face_detection_status")
+            == "HELD"
+        ):
+            tracking_reliability = float(
+                np.clip(
+                    context.capture_metadata.get(
+                        "face_tracking_reliability",
+                        0.0,
+                    ),
+                    0.0,
+                    1.0,
+                )
+            )
+            result.confidence = float(result.confidence or 0.0) * (
+                tracking_reliability
+            )
+            result.warnings.append(
+                "Method reliability reduced because the face ROI is "
+                "temporarily held rather than freshly detected"
+            )
+        if (
+            result.available
+            and context.capture_metadata.get("face_roi_edge_contact", False)
+        ):
+            result.confidence = float(result.confidence or 0.0) * float(
+                config.MODEL_FREE_FACE_EDGE_RELIABILITY_FACTOR
+            )
+            result.warnings.append(
+                "Method reliability reduced because the detected face ROI "
+                "touches the frame margin"
+            )
+        return self._apply_method_contract(
+            module_key,
+            result,
+            (time.perf_counter() - started) * 1000.0,
+        )
+
+    def _apply_method_contract(self, module_key, result, runtime_ms):
+        contract = {
+            "global_fft": (
+                "frequency",
+                ["replay_screen", "print_attack", "recapture"],
+            ),
+            "moire": (
+                "frequency",
+                ["replay_screen", "recapture"],
+            ),
+            "radial_angular_spectrum": (
+                "frequency",
+                ["replay_screen", "print_attack", "recapture"],
+            ),
+            "periodicity": (
+                "frequency",
+                ["replay_screen", "print_attack", "recapture"],
+            ),
+            "dct_block_compression": (
+                "compression_recapture",
+                ["replay_screen", "print_attack", "recapture"],
+            ),
+            "wavelet": (
+                "spatial_texture",
+                ["replay_screen", "print_attack", "recapture"],
+            ),
+            "high_pass_residual": (
+                "spatial_texture",
+                ["replay_screen", "print_attack", "recapture"],
+            ),
+        }
+        family, targets = contract.get(module_key, ("unassigned", []))
+        if result.evidence_family == "unassigned":
+            result.evidence_family = family
+        if not result.attack_targets:
+            result.attack_targets = list(targets)
+        result.runtime_ms = max(0.0, float(runtime_ms))
+        if not result.human_explanation:
+            result.human_explanation = "; ".join(result.evidence) or result.status
+        if result.available and result.score is not None and not result.triggered:
+            result.triggered = bool(
+                result.score
+                >= config.MATHEMATICAL_FUSION_CONFIG["module_evidence_score"]
+                and result.reliability > 0.0
+                and result.status not in ("Analysis Uncertain", "Uncalibrated")
+            )
+        if result.triggered and not result.reason_codes:
+            result.reason_codes = [module_key.upper() + "_RISK_ELEVATED"]
+        if not result.available and not result.reason_codes:
+            result.reason_codes = [module_key.upper() + "_UNSUPPORTED"]
+        return result
 
     def create_fft_visualization(self, log_magnitude_visualization):
         """Context'teki 0-255 log-magnitude gorselinin ekran kopyasi."""
@@ -226,6 +490,12 @@ class ModelFreePreControlApplication:
             output_directory,
             context,
         )
+        for item in visualization_manifest:
+            result = self.latest_pre_control_results.get(item["module"])
+            if result is not None and item["saved"]:
+                result.visualization_paths[item["file"]] = str(
+                    output_directory / item["file"]
+                )
         score_summary = self.latest_combined_result.score_summary
         report = {
             "schema_version": config.MODEL_FREE_ANALYSIS_SCHEMA_VERSION,
@@ -234,6 +504,11 @@ class ModelFreePreControlApplication:
             ),
             "export_timestamp": timestamp,
             "frame_timestamp": context.frame_timestamp,
+            "capture_metadata": context.capture_metadata,
+            "roi_provenance": {
+                name: roi.provenance()
+                for name, roi in context.rois.items()
+            },
             "visualizations": visualization_manifest,
             "calibration": self.fusion_controller.get_calibration_summary(),
             "quality": {
@@ -260,6 +535,11 @@ class ModelFreePreControlApplication:
             },
             "fusion": self._result_report_entry(
                 self.latest_combined_result
+            ),
+            "precontrol_decision": (
+                self.latest_precontrol_decision.to_dict()
+                if self.latest_precontrol_decision is not None
+                else None
             ),
             "score_summary": score_summary,
             "group_scores": {
@@ -419,6 +699,15 @@ class ModelFreePreControlApplication:
             ),
             "moire",
         )
+        save(
+            "02_moire_local_heatmap.png",
+            (
+                self.moire_pre_controller.get_local_heatmap()
+                if moire_available
+                else None
+            ),
+            "moire",
+        )
 
         radial_result = self.latest_pre_control_results.get(
             "radial_angular"
@@ -459,6 +748,30 @@ class ModelFreePreControlApplication:
             "03_dominant_directions.png",
             direction_image,
             "radial_angular",
+        )
+
+        periodicity_result = self.latest_pre_control_results.get(
+            "periodicity"
+        )
+        periodicity_images = (
+            self.periodicity_pre_controller.get_debug_images()
+            if periodicity_result is not None and periodicity_result.available
+            else {}
+        )
+        save(
+            "03b_autocorrelation_map.png",
+            periodicity_images.get("autocorrelation_map"),
+            "periodicity",
+        )
+        save(
+            "03b_cepstrum_map.png",
+            periodicity_images.get("cepstrum_map"),
+            "periodicity",
+        )
+        save(
+            "03b_patch_periodicity_heatmap.png",
+            periodicity_images.get("patch_periodicity_heatmap"),
+            "periodicity",
         )
 
         dct_result = self.latest_pre_control_results.get("dct_block")
@@ -578,6 +891,16 @@ class ModelFreePreControlApplication:
                 else result.score
             ),
             "confidence": result.confidence,
+            "supported": result.supported,
+            "normalized_score": result.normalized_score,
+            "reliability": result.reliability,
+            "evidence_family": result.evidence_family,
+            "attack_targets": result.attack_targets,
+            "triggered": result.triggered,
+            "reason_codes": result.reason_codes,
+            "human_explanation": result.human_explanation,
+            "visualization_paths": result.visualization_paths,
+            "runtime_ms": result.runtime_ms,
             "raw_features": result.raw_features,
             "evidence": result.evidence,
             "warnings": result.warnings,
@@ -1187,9 +1510,14 @@ class ModelFreePreControlApplication:
 
     def create_guide_box(self, frame):
         frame_height, frame_width = frame.shape[:2]
-        side = int(min(frame_width, frame_height) * 0.58)
+        side = int(
+            min(frame_width, frame_height)
+            * config.MODEL_FREE_GUIDE_DIAMETER_RATIO
+        )
         center_x = frame_width // 2
-        center_y = int(frame_height * 0.48)
+        center_y = int(
+            frame_height * config.MODEL_FREE_GUIDE_CENTER_Y_RATIO
+        )
 
         return FaceBox(
             center_x - side // 2,
@@ -1198,24 +1526,49 @@ class ModelFreePreControlApplication:
             side,
         ).clamp_to_frame(frame_width, frame_height)
 
+    def _box_touches_frame_edge(self, box, frame):
+        frame_height, frame_width = frame.shape[:2]
+        margin_ratio = (
+            config.EXPERIMENTAL_MODEL_FREE_FRAME_EDGE_MARGIN_RATIO
+        )
+        margin_x = int(frame_width * margin_ratio)
+        margin_y = int(frame_height * margin_ratio)
+        return bool(
+            box.x <= margin_x
+            or box.y <= margin_y
+            or box.x + box.width >= frame_width - margin_x
+            or box.y + box.height >= frame_height - margin_y
+        )
+
     def draw_guide(
         self,
         frame,
-        guide_box,
+        _guide_box,
         fft_result,
         moire_result,
+        tracking_result=None,
+        analysis_box=None,
     ):
-        center = (
-            guide_box.x + guide_box.width // 2,
-            guide_box.y + guide_box.height // 2,
-        )
-        axes = (
-            guide_box.width // 2,
-            guide_box.height // 2,
-        )
+        # Metot adi eski cagrilarla API uyumlulugu icin korunur. Sabit merkez
+        # dairesi artik cizilmez ve detector etkin GUI akışında analiz girdisi
+        # degildir; tek ROI referansi asagidaki takip kutusudur.
         guide_color = (0, 255, 0) if fft_result.passed else (0, 165, 255)
         combined_result = self.latest_combined_result
-        if (
+        decision = self.latest_precontrol_decision
+        if decision is not None and decision.classification in (
+            "SUSPICIOUS",
+            "HIGH_RISK",
+        ):
+            guide_color = (0, 0, 255)
+        elif decision is not None and decision.classification in (
+            "INSUFFICIENT_QUALITY",
+            "INSUFFICIENT_EVIDENCE",
+            "UNSUPPORTED_CAPTURE",
+        ):
+            guide_color = (0, 165, 255)
+        elif decision is not None and decision.classification == "LIVE":
+            guide_color = (0, 255, 0)
+        elif (
             combined_result is not None
             and combined_result.status
             in (
@@ -1232,16 +1585,23 @@ class ModelFreePreControlApplication:
         elif fft_result.warning:
             guide_color = (0, 0, 255)
 
-        cv2.ellipse(
-            frame,
-            center,
-            axes,
-            0,
-            0,
-            360,
-            guide_color,
-            3,
-        )
+        if (
+            tracking_result is not None
+            and tracking_result.supported
+            and analysis_box is not None
+        ):
+            tracking_color = (
+                (0, 210, 255)
+                if tracking_result.status == "HELD"
+                else (255, 255, 0)
+            )
+            cv2.rectangle(
+                frame,
+                analysis_box.get_top_left().to_tuple(),
+                analysis_box.get_bottom_right().to_tuple(),
+                tracking_color,
+                2,
+            )
         self.draw_text(
             frame,
             "MODEL-FREE PRE-CONTROL",
@@ -1252,7 +1612,7 @@ class ModelFreePreControlApplication:
         )
         self.draw_text(
             frame,
-            "Yuzunu kilavuzun icine yerlestir",
+            self._tracking_display_text(tracking_result),
             68,
             guide_color,
             0.65,
@@ -1301,11 +1661,13 @@ class ModelFreePreControlApplication:
             2,
         )
 
-        if combined_result is not None:
-            combined_text = "Combined Risk: " + combined_result.status
-            display_score = combined_result.score_summary["display_score"]
-            if display_score is not None:
-                combined_text += " | %d/100" % round(display_score)
+        if decision is not None:
+            combined_text = "PreControl: " + decision.classification
+            if decision.overall_risk_0_100 is not None:
+                combined_text += " | %d/100" % round(
+                    decision.overall_risk_0_100
+                )
+            combined_text += " | r=%.2f" % decision.overall_reliability
             self.draw_text(
                 frame,
                 combined_text,
@@ -1315,12 +1677,35 @@ class ModelFreePreControlApplication:
                 2,
             )
 
-        if combined_result is not None and combined_result.warning:
+        if decision is not None and decision.classification in (
+            "SUSPICIOUS",
+            "HIGH_RISK",
+        ):
+            self.draw_combined_warning(frame)
+        elif combined_result is not None and combined_result.warning:
             self.draw_combined_warning(frame)
         elif moire_result.warning:
             self.draw_moire_warning(frame)
         elif fft_result.warning:
             self.draw_global_fft_warning(frame)
+
+    def _tracking_display_text(self, tracking_result):
+        if not self.face_detection_enabled:
+            return "Yuz tespiti kapali - legacy test akisi"
+        if tracking_result is None:
+            return "Yuz tespiti bekleniyor"
+        if tracking_result.status == "DETECTED":
+            return "Yuz takip ediliyor - analiz turkuaz ROI kutusunda"
+        if tracking_result.status == "HELD":
+            return "Yuz kisa sureli takip ile korunuyor"
+        if tracking_result.status == "MULTIPLE_FACES":
+            return "Kadrajda yalnizca bir yuz olmali"
+        if tracking_result.status in (
+            "DETECTOR_ERROR",
+            "DETECTOR_UNAVAILABLE",
+        ):
+            return "Yuz tespit altyapisi kullanilamiyor"
+        return "Yuz bulunamadi - kameraya bak ve kadrajda kal"
 
     def draw_combined_warning(self, frame):
         frame_height, frame_width = frame.shape[:2]
@@ -1429,7 +1814,13 @@ class ModelFreePreControlApplication:
         self.dct_block_pre_controller.reset()
         self.wavelet_pre_controller.reset()
         self.residual_pre_controller.reset()
+        self.periodicity_pre_controller.reset()
         self.fusion_controller.reset()
+        self.face_roi_tracker.reset()
+        if self._owns_face_detector and self.face_detector is not None:
+            self.face_detector.close()
         self.latest_combined_result = None
+        self.latest_precontrol_decision = None
         self.latest_context = None
+        self.latest_face_tracking_result = None
         self.is_closed = True

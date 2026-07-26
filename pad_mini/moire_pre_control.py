@@ -37,6 +37,7 @@ class MoirePeriodicPatternPreController:
         self.previous_region = None
         self.latest_candidate_peaks = []
         self.latest_metrics = None
+        self.latest_local_heatmap = None
 
     def analyze(self, context):
         face_box = context.face_bounding_box
@@ -69,6 +70,19 @@ class MoirePeriodicPatternPreController:
                 face_box,
             )
 
+        global_candidate_peaks = list(self.latest_candidate_peaks)
+        local_metrics = self._calculate_local_patch_metrics(
+            context.grayscale_crop
+        )
+        self.latest_candidate_peaks = global_candidate_peaks
+        metrics["global_moire_score"] = metrics["raw_moire_score"]
+        metrics.update(local_metrics)
+        metrics["raw_moire_score"] = max(
+            metrics["global_moire_score"],
+            local_metrics["local_patch_moire_score"],
+        )
+        self.latest_metrics = dict(metrics)
+
         self.invalid_streak = 0
         evidence = self._create_evidence(metrics)
         return self._stabilize(metrics, evidence)
@@ -84,6 +98,7 @@ class MoirePeriodicPatternPreController:
 
         self.latest_candidate_peaks = []
         self.latest_metrics = None
+        self.latest_local_heatmap = None
 
         return ModelFreeAnalysisResult.unavailable(
             self.MODULE_NAME,
@@ -100,6 +115,12 @@ class MoirePeriodicPatternPreController:
         self.previous_region = None
         self.latest_candidate_peaks = []
         self.latest_metrics = None
+        self.latest_local_heatmap = None
+
+    def get_local_heatmap(self):
+        if self.latest_local_heatmap is None:
+            return None
+        return self.latest_local_heatmap.copy()
 
     def create_debug_visualization(self, log_magnitude_visualization):
         """Draw only the periodic-peak candidates measured by this module."""
@@ -247,6 +268,183 @@ class MoirePeriodicPatternPreController:
         }
         self.latest_metrics = dict(metrics)
         return metrics
+
+    def _calculate_local_patch_metrics(self, grayscale_crop):
+        empty = {
+            "local_patch_moire_score": 0.0,
+            "local_patch_count": 0,
+            "local_patch_strong_count": 0,
+            "local_patch_vote_ratio": 0.0,
+            "local_patch_top_score_mean": 0.0,
+            "local_patch_orientation_consistency": 0.0,
+            "local_patch_dominant_direction": "none",
+            "local_patch_measurements": [],
+        }
+        self.latest_local_heatmap = None
+        if grayscale_crop is None or grayscale_crop.size == 0:
+            return empty
+        if grayscale_crop.ndim == 3:
+            grayscale = cv2.cvtColor(grayscale_crop, cv2.COLOR_BGR2GRAY)
+        else:
+            grayscale = grayscale_crop
+        height, width = grayscale.shape[:2]
+        minimum_side = min(height, width)
+        patch_size = int(round(
+            minimum_side * config.EXPERIMENTAL_MOIRE_LOCAL_PATCH_SIZE_RATIO
+        ))
+        patch_size = int(np.clip(
+            patch_size,
+            config.EXPERIMENTAL_MOIRE_LOCAL_PATCH_MINIMUM_SIZE,
+            config.EXPERIMENTAL_MOIRE_LOCAL_PATCH_MAXIMUM_SIZE,
+        ))
+        patch_size += patch_size % 2
+        if width < patch_size * 2 or height < patch_size * 2:
+            return empty
+
+        window = np.outer(
+            np.hanning(patch_size),
+            np.hanning(patch_size),
+        ).astype(np.float32)
+        margin = config.EXPERIMENTAL_MOIRE_LOCAL_PATCH_INNER_MARGIN_RATIO
+        measurements = []
+        heat_sum = np.zeros((height, width), dtype=np.float32)
+        heat_weight = np.zeros((height, width), dtype=np.float32)
+        for y in range(0, height - patch_size + 1, patch_size):
+            for x in range(0, width - patch_size + 1, patch_size):
+                center_x = x + patch_size / 2.0
+                center_y = y + patch_size / 2.0
+                if not (
+                    margin * width
+                    <= center_x
+                    <= config.EXPERIMENTAL_MOIRE_LOCAL_PATCH_MAXIMUM_X_RATIO
+                    * width
+                    and margin * height
+                    <= center_y
+                    <= config.EXPERIMENTAL_MOIRE_LOCAL_PATCH_MAXIMUM_Y_RATIO
+                    * height
+                ):
+                    continue
+                patch = grayscale[
+                    y : y + patch_size,
+                    x : x + patch_size,
+                ].astype(np.float32)
+                patch_std = float(patch.std())
+                if patch_std < config.EXPERIMENTAL_MOIRE_LOCAL_PATCH_MINIMUM_STD:
+                    continue
+                patch = (patch - float(patch.mean())) / max(patch_std, 1e-6)
+                patch *= window
+                shifted_fft = np.fft.fftshift(np.fft.fft2(patch))
+                patch_power = np.abs(shifted_fft) ** 2
+                patch_log_power = np.log1p(patch_power).astype(np.float32)
+                patch_metrics = self._calculate_metrics(
+                    patch_power,
+                    patch_log_power,
+                )
+                if patch_metrics is None:
+                    continue
+                score = float(patch_metrics["raw_moire_score"])
+                is_strong = bool(
+                    score
+                    >= config.EXPERIMENTAL_MOIRE_LOCAL_PATCH_STRONG_SCORE
+                    and patch_metrics["candidate_peak_count"] >= 2
+                    and patch_metrics["symmetric_pair_count"] >= 1
+                )
+                measurement = {
+                    "x": int(x),
+                    "y": int(y),
+                    "size": int(patch_size),
+                    "score": score,
+                    "strong": is_strong,
+                    "candidate_peak_count": int(
+                        patch_metrics["candidate_peak_count"]
+                    ),
+                    "symmetric_pair_count": int(
+                        patch_metrics["symmetric_pair_count"]
+                    ),
+                    "dominant_direction": patch_metrics[
+                        "dominant_direction"
+                    ],
+                }
+                measurements.append(measurement)
+                heat_sum[
+                    y : y + patch_size,
+                    x : x + patch_size,
+                ] += score
+                heat_weight[
+                    y : y + patch_size,
+                    x : x + patch_size,
+                ] += 1.0
+
+        if not measurements:
+            return empty
+        heat = np.divide(
+            heat_sum,
+            heat_weight,
+            out=np.zeros_like(heat_sum),
+            where=heat_weight > 0.0,
+        )
+        heat_uint8 = np.clip(heat * 2.55, 0.0, 255.0).astype(np.uint8)
+        self.latest_local_heatmap = cv2.applyColorMap(
+            heat_uint8,
+            cv2.COLORMAP_TURBO,
+        )
+
+        strong = [item for item in measurements if item["strong"]]
+        strong.sort(key=lambda item: item["score"], reverse=True)
+        vote_ratio = len(strong) / len(measurements)
+        if len(strong) < config.EXPERIMENTAL_MOIRE_LOCAL_PATCH_MINIMUM_VOTES:
+            local_score = 0.0
+            top_mean = 0.0
+            orientation_consistency = 0.0
+            dominant_direction = "none"
+        else:
+            top = strong[: config.EXPERIMENTAL_MOIRE_LOCAL_PATCH_TOP_COUNT]
+            top_mean = float(np.mean([item["score"] for item in top]))
+            directions = [item["dominant_direction"] for item in strong]
+            direction_counts = {
+                direction: directions.count(direction)
+                for direction in set(directions)
+                if direction != "none"
+            }
+            if direction_counts:
+                dominant_direction = max(
+                    direction_counts,
+                    key=direction_counts.get,
+                )
+                orientation_consistency = (
+                    direction_counts[dominant_direction] / len(strong)
+                )
+            else:
+                dominant_direction = "none"
+                orientation_consistency = 0.0
+            vote_support = min(
+                1.0,
+                len(strong)
+                / config.EXPERIMENTAL_MOIRE_LOCAL_PATCH_MINIMUM_VOTES,
+            )
+            local_score = (
+                config.EXPERIMENTAL_MOIRE_LOCAL_PATCH_PEAK_WEIGHT
+                * top_mean
+                + 100.0
+                * config.EXPERIMENTAL_MOIRE_LOCAL_PATCH_CONSISTENCY_WEIGHT
+                * orientation_consistency
+                * vote_support
+            )
+
+        return {
+            "local_patch_moire_score": float(
+                np.clip(local_score, 0.0, 100.0)
+            ),
+            "local_patch_count": len(measurements),
+            "local_patch_strong_count": len(strong),
+            "local_patch_vote_ratio": float(vote_ratio),
+            "local_patch_top_score_mean": float(top_mean),
+            "local_patch_orientation_consistency": float(
+                orientation_consistency
+            ),
+            "local_patch_dominant_direction": dominant_direction,
+            "local_patch_measurements": measurements,
+        }
 
     def _select_candidates(
         self,
@@ -533,7 +731,7 @@ class MoirePeriodicPatternPreController:
                 "WARNING: Possible screen replay / periodic display pattern"
             )
         elif not history_ready or raw_score >= (
-            config.EXPERIMENTAL_MOIRE_SUSPICIOUS_SCORE
+            config.EXPERIMENTAL_MOIRE_LOCAL_SUPPORTING_SCORE
         ):
             status = "Analysis Uncertain"
         else:
@@ -584,6 +782,14 @@ class MoirePeriodicPatternPreController:
             evidence.append(
                 "Energy concentrated in a narrow %s frequency direction"
                 % metrics["dominant_direction"]
+            )
+        if metrics.get("local_patch_moire_score", 0.0) >= (
+            config.EXPERIMENTAL_MOIRE_LOCAL_SUPPORTING_SCORE
+        ):
+            evidence.append(
+                "Consistent symmetric periodic peaks detected in %d local "
+                "face patches"
+                % metrics.get("local_patch_strong_count", 0)
             )
         if not evidence:
             evidence.append("No stable periodic display evidence")

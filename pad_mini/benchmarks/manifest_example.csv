@@ -1,0 +1,4 @@
+path,label,attack_species,capture_id,split
+/absolute/path/to/bona_fide_001.mp4,bona_fide,none,bf_001,calibration
+/absolute/path/to/replay_oled_001.mp4,attack,replay_oled,replay_001,test
+/absolute/path/to/print_matte_001.png,attack,print_matte,print_001,test

@@ -1,0 +1,51 @@
+{
+  "schema_version": 3,
+  "status": "EXAMPLE_ONLY_NOT_ACTIVE",
+  "profile_id": "replace-with-device-profile",
+  "runtime_mode": "BALANCED",
+  "capture_profile": {
+    "camera_device_id": "REQUIRED",
+    "resolution": [1280, 720],
+    "nominal_fps": 30.0,
+    "transport": "camera_stream",
+    "roi_semantic_basis": "verified_face_landmarks",
+    "calibration_manifest_sha256": "REQUIRED",
+    "validation_manifest_sha256": "REQUIRED",
+    "final_test_used_for_tuning": false
+  },
+  "feature_calibration": {
+    "periodicity.autocorrelation_peak_ratio": {
+      "direction": "high",
+      "median_reference": 0.0,
+      "mad_reference": 0.0,
+      "minimum_mad": 0.000001,
+      "winsor_percentiles": [0.5, 99.5],
+      "z_start": 2.5,
+      "z_full": 6.0,
+      "replace_placeholder_values": true
+    },
+    "global_fft.spectral_slope": {
+      "direction": "outside",
+      "valid_interval": [0.0, 0.0],
+      "transition_width": 0.0,
+      "winsor_percentiles": [0.5, 99.5],
+      "replace_placeholder_values": true
+    }
+  },
+  "family_fusion": {
+    "formula": "reliability_weighted_average",
+    "frequency_method_weights": {
+      "fft": 0.25,
+      "moire": 0.30,
+      "radial_angular": 0.20,
+      "periodicity": 0.25
+    }
+  },
+  "deployment_thresholds": {
+    "suspicious_score": null,
+    "high_risk_score": null,
+    "minimum_live_reliability": null,
+    "selected_validation_policy": "REQUIRED",
+    "approved": false
+  }
+}
