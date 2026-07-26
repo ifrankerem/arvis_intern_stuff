@@ -1,0 +1,1983 @@
+{
+  "schema_version": 1,
+  "export_timestamp": "20260723_233442_899507",
+  "frame_timestamp": 1784838882.804596,
+  "visualizations": [
+    {
+      "module": "input",
+      "file": "input_face_original.png",
+      "saved": true
+    },
+    {
+      "module": "input",
+      "file": "input_face_aligned.png",
+      "saved": true
+    },
+    {
+      "module": "input",
+      "file": "input_face_standardized_luminance.png",
+      "saved": true
+    },
+    {
+      "module": "input",
+      "file": "input_fft_windowed.png",
+      "saved": true
+    },
+    {
+      "module": "fft",
+      "file": "01_global_fft_spectrum.png",
+      "saved": true
+    },
+    {
+      "module": "fft",
+      "file": "01_global_fft_bands.png",
+      "saved": true
+    },
+    {
+      "module": "moire",
+      "file": "02_moire_periodic_peaks.png",
+      "saved": true
+    },
+    {
+      "module": "radial_angular",
+      "file": "03_radial_profile.png",
+      "saved": true
+    },
+    {
+      "module": "radial_angular",
+      "file": "03_angular_profile.png",
+      "saved": true
+    },
+    {
+      "module": "radial_angular",
+      "file": "03_dominant_directions.png",
+      "saved": true
+    },
+    {
+      "module": "dct_block",
+      "file": "04_dct_band_energy_map.png",
+      "saved": true
+    },
+    {
+      "module": "dct_block",
+      "file": "04_dct_block_boundaries.png",
+      "saved": true
+    },
+    {
+      "module": "dct_block",
+      "file": "04_dct_blockiness_heatmap.png",
+      "saved": true
+    },
+    {
+      "module": "wavelet",
+      "file": "05_wavelet_level_1_LL.png",
+      "saved": true
+    },
+    {
+      "module": "wavelet",
+      "file": "05_wavelet_level_1_LH.png",
+      "saved": true
+    },
+    {
+      "module": "wavelet",
+      "file": "05_wavelet_level_1_HL.png",
+      "saved": true
+    },
+    {
+      "module": "wavelet",
+      "file": "05_wavelet_level_1_HH.png",
+      "saved": true
+    },
+    {
+      "module": "wavelet",
+      "file": "05_wavelet_level_2_LL.png",
+      "saved": true
+    },
+    {
+      "module": "wavelet",
+      "file": "05_wavelet_level_2_LH.png",
+      "saved": true
+    },
+    {
+      "module": "wavelet",
+      "file": "05_wavelet_level_2_HL.png",
+      "saved": true
+    },
+    {
+      "module": "wavelet",
+      "file": "05_wavelet_level_2_HH.png",
+      "saved": true
+    },
+    {
+      "module": "wavelet",
+      "file": "05_wavelet_anomaly_heatmap.png",
+      "saved": true
+    },
+    {
+      "module": "residual",
+      "file": "06_gaussian_residual.png",
+      "saved": true
+    },
+    {
+      "module": "residual",
+      "file": "06_laplacian.png",
+      "saved": true
+    },
+    {
+      "module": "residual",
+      "file": "06_gradient_magnitude.png",
+      "saved": true
+    },
+    {
+      "module": "residual",
+      "file": "06_patch_residual_energy_map.png",
+      "saved": true
+    }
+  ],
+  "calibration": {
+    "path": "/home/kero/Desktop/arvis_intern_stuff/pad_mini/model_free_calibration.json",
+    "file_exists": false,
+    "fusion_calibration_compatible": false,
+    "scoring_mode": "experimental"
+  },
+  "quality": {
+    "valid": true,
+    "reason": null,
+    "blur": 414.41048016621534,
+    "brightness": 60.62760726670462,
+    "exposure_valid": true,
+    "pose_alignment_valid": null,
+    "alignment_applied": false,
+    "face_dimensions": [
+      417,
+      417
+    ],
+    "analysis_dimensions": [
+      256,
+      256
+    ]
+  },
+  "modules": {
+    "fft": {
+      "module_name": "Global FFT",
+      "available": true,
+      "status": "Normal frequency structure",
+      "calibrated": false,
+      "raw_score": 0.0,
+      "stabilized_score": 0.0,
+      "display_score": 0.0,
+      "confidence": 0.6,
+      "raw_features": {
+        "low_frequency_energy_ratio": 0.7597069819790943,
+        "middle_frequency_energy_ratio": 0.1769402369330803,
+        "high_frequency_energy_ratio": 0.06335273100304195,
+        "spectral_centroid": 0.13816370167679937,
+        "spectral_entropy": 0.6965802620808501,
+        "spectral_slope": -2.658403665817879,
+        "total_spectral_energy": 159729152.0,
+        "high_to_low_energy_ratio": 0.08339100798837373,
+        "fft_global_score": 0.0
+      },
+      "evidence": [
+        "No strong deviation from provisional global FFT ranges",
+        "Experimental feature ranges are not a calibrated scientific baseline"
+      ],
+      "warnings": [],
+      "debug_data": {
+        "possible_attack": "none",
+        "quality_status": "Sufficient",
+        "history_length": 12,
+        "scoring_mode": "experimental",
+        "feature_deviations": {
+          "low_frequency_energy_ratio": 0.0,
+          "middle_frequency_energy_ratio": 0.0,
+          "high_frequency_energy_ratio": 0.0,
+          "spectral_centroid": 0.0,
+          "spectral_entropy": 0.0,
+          "spectral_slope": 0.0,
+          "high_to_low_energy_ratio": 0.0
+        },
+        "frequency_bands": {
+          "dc_exclusion_radius": 0.02,
+          "low": [
+            0.02,
+            0.16
+          ],
+          "middle": [
+            0.16,
+            0.45
+          ],
+          "high": [
+            0.45,
+            0.92
+          ]
+        }
+      }
+    },
+    "moire": {
+      "module_name": "Moiré",
+      "available": true,
+      "status": "Normal",
+      "calibrated": false,
+      "raw_score": 0.0,
+      "stabilized_score": 0.0,
+      "display_score": 0.0,
+      "confidence": 1.0,
+      "raw_features": {
+        "raw_moire_score": 0.0,
+        "periodic_peak_score": 0.0,
+        "symmetric_peak_score": 0.0,
+        "directional_concentration_score": 0.0,
+        "candidate_peak_count": 0,
+        "symmetric_pair_count": 0,
+        "peak_energy_share": 0.0,
+        "dominant_direction": "none",
+        "dominant_direction_share": 0.0
+      },
+      "evidence": [
+        "No stable periodic display evidence"
+      ],
+      "warnings": [],
+      "debug_data": {
+        "possible_attack": "none",
+        "quality_status": "Sufficient",
+        "history_length": 10
+      }
+    },
+    "radial_angular": {
+      "module_name": "Radial/Angular",
+      "available": true,
+      "status": "Normal spectral distribution",
+      "calibrated": false,
+      "raw_score": 0.6697445799072457,
+      "stabilized_score": 0.25019520175299226,
+      "display_score": 0.25019520175299226,
+      "confidence": 0.6,
+      "raw_features": {
+        "radial_bin_centers": [
+          0.029375,
+          0.048125,
+          0.06687499999999999,
+          0.085625,
+          0.104375,
+          0.12312499999999998,
+          0.14187499999999997,
+          0.160625,
+          0.17937499999999998,
+          0.198125,
+          0.21687499999999998,
+          0.23562499999999997,
+          0.25437499999999996,
+          0.273125,
+          0.291875,
+          0.31062500000000004,
+          0.329375,
+          0.348125,
+          0.366875,
+          0.385625,
+          0.40437500000000004,
+          0.423125,
+          0.441875,
+          0.46062499999999995,
+          0.479375,
+          0.498125,
+          0.516875,
+          0.535625,
+          0.5543750000000001,
+          0.573125,
+          0.5918749999999999,
+          0.610625,
+          0.629375,
+          0.6481250000000001,
+          0.666875,
+          0.6856249999999999,
+          0.704375,
+          0.723125,
+          0.7418750000000001,
+          0.760625,
+          0.7793749999999999,
+          0.798125,
+          0.816875,
+          0.8356250000000001,
+          0.854375,
+          0.8731249999999999,
+          0.891875,
+          0.910625
+        ],
+        "radial_mean_power_profile": [
+          495266.75,
+          322809.28125,
+          114712.25,
+          118868.4453125,
+          72944.59375,
+          21491.763671875,
+          19953.17578125,
+          23985.0,
+          14177.7080078125,
+          8615.4052734375,
+          5645.013671875,
+          3937.318603515625,
+          3054.4033203125,
+          2822.28125,
+          2501.667724609375,
+          1924.6444091796875,
+          1780.1102294921875,
+          1438.4759521484375,
+          1348.0372314453125,
+          1519.7283935546875,
+          1436.7955322265625,
+          1020.4557495117188,
+          917.6676025390625,
+          906.1306762695312,
+          824.195556640625,
+          609.6207885742188,
+          640.0850219726562,
+          560.6355590820312,
+          516.3916015625,
+          535.1782836914062,
+          477.8988952636719,
+          335.3834533691406,
+          347.72247314453125,
+          271.5950012207031,
+          277.2354736328125,
+          238.2577362060547,
+          245.5605926513672,
+          209.17779541015625,
+          212.1342315673828,
+          195.09059143066406,
+          192.7088623046875,
+          160.74073791503906,
+          165.62535095214844,
+          174.43626403808594,
+          147.50868225097656,
+          143.42047119140625,
+          121.93394470214844,
+          110.99188995361328
+        ],
+        "radial_median_power_profile": [
+          267578.5,
+          197296.125,
+          67210.1171875,
+          77223.65625,
+          39766.40625,
+          13613.326171875,
+          13070.5625,
+          13558.2041015625,
+          8675.162109375,
+          5255.677734375,
+          3776.2490234375,
+          2602.10009765625,
+          2136.92919921875,
+          1947.4654541015625,
+          1808.145263671875,
+          1514.151611328125,
+          1426.8935546875,
+          1062.424560546875,
+          954.792236328125,
+          972.2339477539062,
+          950.476806640625,
+          683.16552734375,
+          616.0614624023438,
+          595.0964965820312,
+          536.3701171875,
+          412.30645751953125,
+          423.7641906738281,
+          380.44091796875,
+          323.03643798828125,
+          275.78009033203125,
+          306.3591613769531,
+          216.5220947265625,
+          228.16358947753906,
+          191.82838439941406,
+          175.65982055664062,
+          156.1781005859375,
+          158.53004455566406,
+          142.23995971679688,
+          135.386474609375,
+          133.58673095703125,
+          131.28106689453125,
+          107.09538269042969,
+          106.4248046875,
+          105.74990844726562,
+          96.08998107910156,
+          100.18557739257812,
+          82.28221130371094,
+          71.41899108886719
+        ],
+        "radial_normalized_energy_profile": [
+          0.14883197184609967,
+          0.21826576127019762,
+          0.08330740631347984,
+          0.128000257348146,
+          0.09133535249106739,
+          0.02960128486732429,
+          0.03747564605202129,
+          0.04444749193404764,
+          0.030888805041807018,
+          0.020927784941136205,
+          0.014136464970827094,
+          0.011733385252786508,
+          0.00925523783308058,
+          0.009541351079685784,
+          0.008645389058089167,
+          0.006988666544004529,
+          0.007355406120824018,
+          0.005979797765751925,
+          0.006042695647261751,
+          0.007040662376476576,
+          0.0069083133323828904,
+          0.0053409225101876704,
+          0.004848904843554937,
+          0.005060244636606075,
+          0.004747160733333152,
+          0.003618127991350278,
+          0.004119519729794009,
+          0.0035379931180878053,
+          0.003530348927792707,
+          0.0037123942084143213,
+          0.0033509647926561947,
+          0.0025280400824996305,
+          0.0026036330874753314,
+          0.0021424373235678284,
+          0.002249415293811483,
+          0.001915260565016904,
+          0.002158448020665231,
+          0.0018019795419800164,
+          0.0018805713734515016,
+          0.0018369612208634768,
+          0.0017566242476681924,
+          0.0015900063524792371,
+          0.0016383237900947812,
+          0.0017167424768997235,
+          0.0015662433719474532,
+          0.0014833274236172897,
+          0.001322173171965294,
+          0.0012340990777216813
+        ],
+        "radial_log_power_profile": [
+          13.112853804403146,
+          12.684820065087576,
+          11.650190815190237,
+          11.685781071626607,
+          11.197469151167159,
+          9.975471584061053,
+          9.901193712758596,
+          10.085225605791667,
+          9.55949668224055,
+          9.06142325503705,
+          8.638705030325735,
+          8.278509160831378,
+          8.024666882634083,
+          7.945655051346205,
+          7.8251125317643755,
+          7.563015948718344,
+          7.484992173284705,
+          7.272034404215181,
+          7.207146455119203,
+          7.326944705343637,
+          7.270866339177133,
+          6.928984094192327,
+          6.822924362193944,
+          6.810286515006896,
+          6.715620396597802,
+          6.41447612586308,
+          6.463162087707746,
+          6.330853168160895,
+          6.248800037618835,
+          6.284466724592674,
+          6.171489500525422,
+          5.818251739520269,
+          5.854276399968912,
+          5.607987181679418,
+          5.628467782621481,
+          5.4775413650498095,
+          5.507607775249024,
+          5.347953817326185,
+          5.361922162371879,
+          5.2785767536253125,
+          5.266356322100902,
+          5.0859946700106695,
+          5.1157478847361055,
+          5.167275809070343,
+          5.0006434228702075,
+          4.972728983664204,
+          4.811647176175621,
+          4.71842645754483
+        ],
+        "radial_spectral_slope": -2.658403665817879,
+        "slope_fit_error": 0.10565583449640456,
+        "low_radial_energy": 0.759706974029541,
+        "middle_radial_energy": 0.17694023251533508,
+        "high_radial_energy": 0.06335273385047913,
+        "radial_entropy": 0.704431494964915,
+        "dominant_radial_frequency": 0.048125,
+        "dominant_radial_energy_ratio": 0.21826576127019762,
+        "narrow_band_energy_concentration": 6.940864761335078,
+        "angular_bin_centers_degrees": [
+          2.5,
+          7.499999999999999,
+          12.499999999999998,
+          17.5,
+          22.5,
+          27.5,
+          32.5,
+          37.49999999999999,
+          42.5,
+          47.5,
+          52.50000000000001,
+          57.5,
+          62.50000000000001,
+          67.5,
+          72.5,
+          77.5,
+          82.5,
+          87.5,
+          92.5,
+          97.49999999999999,
+          102.5,
+          107.5,
+          112.5,
+          117.5,
+          122.49999999999999,
+          127.50000000000001,
+          132.5,
+          137.5,
+          142.5,
+          147.49999999999997,
+          152.5,
+          157.5,
+          162.5,
+          167.5,
+          172.5,
+          177.5
+        ],
+        "angular_energy_profile": [
+          0.07849546462251299,
+          0.029073593904761982,
+          0.030836337251699677,
+          0.04181031086923945,
+          0.031087143065781756,
+          0.019204709732635404,
+          0.01658433020416962,
+          0.017481329895246672,
+          0.006507950251936478,
+          0.030470302002229374,
+          0.008541631148207687,
+          0.01095898261577198,
+          0.01180302390887294,
+          0.009202265094351719,
+          0.01823003949836283,
+          0.023325228697138517,
+          0.03859049473949502,
+          0.01945352780687147,
+          0.07886443922271621,
+          0.05955559070394364,
+          0.04218086940072154,
+          0.04499116729800206,
+          0.03408112377632857,
+          0.023971615087520153,
+          0.018914246160901173,
+          0.017932008428868388,
+          0.015143730619693017,
+          0.02555384348374929,
+          0.022903802807392355,
+          0.03386594389482516,
+          0.019466197691952937,
+          0.019351771178250543,
+          0.020589951544975334,
+          0.04070198782499014,
+          0.023353885019060265,
+          0.01692112846125922
+        ],
+        "dominant_frequency_angle_degrees": 92.5,
+        "dominant_image_line_angle_degrees": 2.5,
+        "maximum_angular_energy": 0.07886443922271621,
+        "angular_mean_degrees": 126.4557561374406,
+        "angular_variance": 0.9168960605390442,
+        "angular_entropy": 0.9555891542554922,
+        "directional_anisotropy": 0.23216492132345923,
+        "horizontal_concentration": 0.21938239708428425,
+        "vertical_concentration": 0.2619701505708864,
+        "diagonal_concentration": 0.20594385535209003,
+        "radial_profile_deviation": null,
+        "angular_profile_deviation": null,
+        "radial_anomaly_score": 1.2177174180131738,
+        "angular_anisotropy_score": 0.0,
+        "radial_angular_score": 0.6697445799072457
+      },
+      "evidence": [
+        "No strong radial/angular deviation detected",
+        "Experimental ranges; bona-fide profile calibration unavailable",
+        "Pose validity unavailable; directional evidence is conservative",
+        "No geometric face alignment; Hann window reduces crop-border influence"
+      ],
+      "warnings": [],
+      "debug_data": {
+        "possible_attack": "none",
+        "quality_status": "Sufficient",
+        "scoring_mode": "experimental",
+        "history_length": 10,
+        "raw_radial_score": 1.2177174180131738,
+        "raw_angular_score": 0.0,
+        "stabilized_radial_score": 0.4549003668236222,
+        "stabilized_angular_score": 0.0,
+        "radial_feature_deviations": {
+          "radial_spectral_slope": 0.0,
+          "slope_fit_error": 0.0,
+          "radial_entropy": 0.0,
+          "dominant_radial_energy_ratio": 0.06088587090065869,
+          "narrow_band_energy_concentration": 0.0
+        },
+        "angular_feature_deviations": {
+          "maximum_angular_energy": 0.0,
+          "angular_entropy": 0.0,
+          "directional_anisotropy": 0.0,
+          "horizontal_concentration": 0.0,
+          "vertical_concentration": 0.0,
+          "diagonal_concentration": 0.0
+        },
+        "false_positive_factors": [
+          "face pose",
+          "hair",
+          "beard",
+          "eyebrows",
+          "image blur",
+          "lighting gradients",
+          "crop borders",
+          "patterned background"
+        ]
+      }
+    },
+    "dct_block": {
+      "module_name": "DCT / Block Analysis",
+      "available": true,
+      "status": "No strong block anomaly",
+      "calibrated": false,
+      "raw_score": 4.0,
+      "stabilized_score": 4.0,
+      "display_score": 4.0,
+      "confidence": 0.55,
+      "raw_features": {
+        "dc_coefficient_mean": 485.019287109375,
+        "dc_coefficient_median": 282.0625,
+        "dc_coefficient_std": 418.49185740838345,
+        "dc_coefficient_minimum": 84.5,
+        "dc_coefficient_maximum": 1718.5,
+        "dc_energy_mean": 410379.1435852051,
+        "low_frequency_ac_energy_mean": 12302.05859051344,
+        "low_frequency_ac_energy_median": 280.8291636286601,
+        "low_frequency_ac_energy_std": 29754.80340338489,
+        "middle_frequency_ac_energy_mean": 1830.6031044343229,
+        "middle_frequency_ac_energy_median": 122.52146014460084,
+        "middle_frequency_ac_energy_std": 4290.148886174307,
+        "high_frequency_ac_energy_mean": 398.70909659251953,
+        "high_frequency_ac_energy_median": 31.52570350603754,
+        "high_frequency_ac_energy_std": 966.854467519789,
+        "total_ac_energy_mean": 14531.370791540281,
+        "low_frequency_ac_energy_ratio": 0.8465862420684578,
+        "middle_frequency_ac_energy_ratio": 0.12597594065248433,
+        "high_frequency_ac_energy_ratio": 0.02743781727905778,
+        "ac_to_dc_ratio_mean": 0.04133213094840853,
+        "ac_to_dc_ratio_median": 0.009359599889492892,
+        "ac_to_dc_ratio_std": 0.09585687775886019,
+        "near_zero_ac_coefficient_ratio": 0.4396701388888889,
+        "zero_ac_coefficient_ratio": 0.001441592261904762,
+        "near_zero_all_coefficient_ratio": 0.43280029296875,
+        "near_zero_ratio_block_mean": 0.43967013888888884,
+        "near_zero_ratio_block_std": 0.22194821685165717,
+        "coefficient_entropy_global": 0.8805658790207188,
+        "coefficient_entropy_definition": "normalized Shannon entropy of absolute AC coefficient mass",
+        "coefficient_entropy_mean": 0.8480143917717647,
+        "coefficient_entropy_median": 0.871084847845278,
+        "coefficient_entropy_std": 0.06850869279618646,
+        "coefficient_kurtosis_global": 187.09639184001247,
+        "coefficient_kurtosis_mean": 12.167277369309774,
+        "coefficient_kurtosis_median": 7.6315798407056725,
+        "coefficient_kurtosis_std": 10.628975578035503,
+        "neighboring_block_variation_mean": 0.10831461375327109,
+        "neighboring_block_variation_std": 0.07105630103852793,
+        "neighboring_block_variation_p95": 0.2502584048110627,
+        "horizontal_neighbor_variation_mean": 0.10946702527424294,
+        "vertical_neighbor_variation_mean": 0.10716220223229925,
+        "horizontal_block_boundary_discontinuity_mean": 4.2184977531433105,
+        "horizontal_nearby_non_boundary_discontinuity_mean": 4.424647331237793,
+        "horizontal_block_boundary_ratio": 0.9534088114460385,
+        "horizontal_blockiness_score": 0.0,
+        "vertical_block_boundary_discontinuity_mean": 4.31174373626709,
+        "vertical_nearby_non_boundary_discontinuity_mean": 4.421024322509766,
+        "vertical_block_boundary_ratio": 0.9752816138815906,
+        "vertical_blockiness_score": 0.0,
+        "horizontal_discontinuity_phase_profile": [
+          4.3287353515625,
+          4.301513671875,
+          4.0567626953125,
+          4.1263427734375,
+          4.28662109375,
+          4.416259765625,
+          4.38037109375,
+          4.2184977531433105
+        ],
+        "vertical_discontinuity_phase_profile": [
+          4.3697509765625,
+          4.33544921875,
+          4.128662109375,
+          4.404052734375,
+          4.3292236328125,
+          4.12548828125,
+          4.462890625,
+          4.31174373626709
+        ],
+        "horizontal_8px_phase_prominence": 0.9877202727346037,
+        "vertical_8px_phase_prominence": 1.000885031260879,
+        "combined_8x8_periodicity_score": 0.0,
+        "blockiness_score": 0.0,
+        "inner_face_patch_count": 36,
+        "local_dct_distance_mean": 0.7802325671821682,
+        "local_dct_distance_p95": 1.8753740581091347,
+        "local_dct_distance_maximum": 2.072420435776232,
+        "local_dct_outlier_ratio": 0.0,
+        "local_patch_neighbor_variation_mean": 0.40162289869278334,
+        "local_dct_inconsistency_score": 0.0,
+        "block_size": 8,
+        "block_rows": 32,
+        "block_columns": 32,
+        "complete_block_count": 1024,
+        "analysis_width": 256,
+        "analysis_height": 256,
+        "source_face_width": 417,
+        "source_face_height": 417,
+        "near_zero_threshold": 1.0,
+        "standardization_upscale_ratio": 0.6139088729016786,
+        "dct_band_anomaly_score": 0.0,
+        "coefficient_sparsity_score": 20.0,
+        "calibrated_feature_anomaly_score": null,
+        "final_dct_score": 4.0
+      },
+      "evidence": [
+        "No strong block-frequency evidence",
+        "Raw DCT band deviations retained in debug data",
+        "Raw coefficient deviations retained in debug data",
+        "Experimental score; calibration unavailable",
+        "Decoded pixels cannot reveal original JPEG tables or definitive double-JPEG history"
+      ],
+      "warnings": [],
+      "debug_data": {
+        "possible_attack": "none",
+        "quality_status": "Sufficient",
+        "scoring_mode": "experimental-uncalibrated",
+        "history_length": 10,
+        "stabilized_component_scores": {
+          "dct_band_anomaly_score": 0.0,
+          "coefficient_sparsity_score": 20.0,
+          "blockiness_score": 0.0,
+          "local_dct_inconsistency_score": 0.0
+        },
+        "band_feature_deviations": {
+          "low_frequency_ac_energy_ratio": 0.0,
+          "middle_frequency_ac_energy_ratio": 0.0,
+          "high_frequency_ac_energy_ratio": 0.0,
+          "ac_to_dc_ratio_mean": 0.0
+        },
+        "sparsity_feature_deviations": {
+          "near_zero_ac_coefficient_ratio": 0.0,
+          "coefficient_entropy_mean": 0.0,
+          "coefficient_kurtosis_global": 1.0
+        },
+        "calibration_feature_deviations": {},
+        "uncertainty_reasons": [],
+        "alignment_applied": false,
+        "pose_alignment_valid": null,
+        "encoded_jpeg_bytes_available": false,
+        "excluded_claims": [
+          "original JPEG quantization tables",
+          "definitive JPEG quality factor",
+          "definitive double-JPEG history"
+        ],
+        "false_positive_factors": [
+          "normal camera or video compression",
+          "resizing",
+          "severe blur",
+          "denoising or smoothing",
+          "sharpening",
+          "natural facial texture and lighting"
+        ]
+      }
+    },
+    "wavelet": {
+      "module_name": "Wavelet",
+      "available": true,
+      "status": "Normal multi-scale texture",
+      "calibrated": false,
+      "raw_score": 9.643100529426755,
+      "stabilized_score": 2.333685476361786,
+      "display_score": 2.333685476361786,
+      "confidence": 0.55,
+      "raw_features": {
+        "analysis_width": 256,
+        "analysis_height": 256,
+        "source_face_width": 417,
+        "source_face_height": 417,
+        "standardization_upscale_ratio": 0.6139088729016786,
+        "clipped_pixel_ratio": 0.0,
+        "inner_face_mask_ratio": 0.5654296875,
+        "wavelet_name": "db2",
+        "wavelet_decomposition_levels": 2,
+        "wavelet_boundary_mode": "periodization",
+        "level_1_approximation_energy": 353483836.5368233,
+        "level_1_approximation_mean": 158.0362091064453,
+        "level_1_approximation_variance": 13181.2744140625,
+        "level_1_horizontal_energy": 650018.9611519682,
+        "level_1_horizontal_mean_absolute_coefficient": 4.279626168964389,
+        "level_1_horizontal_variance": 70.16576262119473,
+        "level_1_horizontal_median_absolute_deviation": 1.725484861060977,
+        "level_1_horizontal_entropy": 0.9113600069477588,
+        "level_1_horizontal_kurtosis": 21.64237355818844,
+        "level_1_horizontal_sparsity_ratio": 0.34196891191709844,
+        "level_1_vertical_energy": 640002.5672907501,
+        "level_1_vertical_mean_absolute_coefficient": 4.2134589736634585,
+        "level_1_vertical_variance": 69.08433413955993,
+        "level_1_vertical_median_absolute_deviation": 1.6019610166549683,
+        "level_1_vertical_entropy": 0.909275594129616,
+        "level_1_vertical_kurtosis": 20.759392128030143,
+        "level_1_vertical_sparsity_ratio": 0.3650690846286701,
+        "level_1_diagonal_energy": 165381.49748502538,
+        "level_1_diagonal_mean_absolute_coefficient": 2.1432572314466336,
+        "level_1_diagonal_variance": 17.85159432274292,
+        "level_1_diagonal_median_absolute_deviation": 0.8247610330581665,
+        "level_1_diagonal_entropy": 0.9088289984865024,
+        "level_1_diagonal_kurtosis": 20.201182808971588,
+        "level_1_diagonal_sparsity_ratio": 0.5519214162348878,
+        "level_1_total_detail_energy": 1455403.0259277436,
+        "level_1_detail_to_approximation_energy_ratio": 0.004117311388794239,
+        "level_1_horizontal_normalized_energy_ratio": 0.4466247146474187,
+        "level_1_vertical_normalized_energy_ratio": 0.4397425014853063,
+        "level_1_diagonal_normalized_energy_ratio": 0.11363278386727503,
+        "level_1_directional_energy_anisotropy": 0.33299193078014366,
+        "level_1_maximum_directional_energy_ratio": 0.4466247146474187,
+        "level_1_dominant_detail_direction": "horizontal",
+        "level_1_horizontal_to_vertical_energy_ratio": 1.015650552627655,
+        "level_2_approximation_energy": 350065126.4884391,
+        "level_2_approximation_mean": 315.0604248046875,
+        "level_2_approximation_variance": 51822.4453125,
+        "level_2_horizontal_energy": 873696.9103036608,
+        "level_2_horizontal_mean_absolute_coefficient": 10.889498738601747,
+        "level_2_horizontal_variance": 377.06819946539116,
+        "level_2_horizontal_median_absolute_deviation": 4.16974139213562,
+        "level_2_horizontal_entropy": 0.9035902218485852,
+        "level_2_horizontal_kurtosis": 12.535531179630222,
+        "level_2_horizontal_sparsity_ratio": 0.18299525248165732,
+        "level_2_vertical_energy": 1120048.207413522,
+        "level_2_vertical_mean_absolute_coefficient": 12.085443696020798,
+        "level_2_vertical_variance": 483.36522869886403,
+        "level_2_vertical_median_absolute_deviation": 4.336226463317871,
+        "level_2_vertical_entropy": 0.8993107378167982,
+        "level_2_vertical_kurtosis": 12.961519298160718,
+        "level_2_vertical_sparsity_ratio": 0.17997410444540354,
+        "level_2_diagonal_energy": 254408.45339819713,
+        "level_2_diagonal_mean_absolute_coefficient": 5.946228656379999,
+        "level_2_diagonal_variance": 109.70549343043584,
+        "level_2_diagonal_median_absolute_deviation": 2.7719934284687042,
+        "level_2_diagonal_entropy": 0.9108421135536715,
+        "level_2_diagonal_kurtosis": 12.799191952260337,
+        "level_2_diagonal_sparsity_ratio": 0.23996547259387138,
+        "level_2_total_detail_energy": 2248153.57111538,
+        "level_2_detail_to_approximation_energy_ratio": 0.006422100920668616,
+        "level_2_horizontal_normalized_energy_ratio": 0.388628660216567,
+        "level_2_vertical_normalized_energy_ratio": 0.49820805028805515,
+        "level_2_diagonal_normalized_energy_ratio": 0.11316328949537778,
+        "level_2_directional_energy_anisotropy": 0.38504476079267735,
+        "level_2_maximum_directional_energy_ratio": 0.49820805028805515,
+        "level_2_dominant_detail_direction": "vertical",
+        "level_2_horizontal_to_vertical_energy_ratio": 0.7800529517575413,
+        "global_detail_entropy_mean": 0.9072012787971554,
+        "global_detail_entropy_std": 0.004335960529666603,
+        "global_detail_sparsity_mean": 0.31031570705026473,
+        "global_detail_sparsity_std": 0.12943580355683387,
+        "global_directional_anisotropy_maximum": 0.38504476079267735,
+        "global_directional_dominance_maximum": 0.49820805028805515,
+        "level_1_local_patch_count": 36,
+        "level_1_local_energy_log_median": 5.014305361947413,
+        "level_1_local_energy_robust_distance_p95": 2.6175864671028553,
+        "level_1_isolated_high_frequency_patch_ratio": 0.0,
+        "level_1_unusually_smooth_patch_ratio": 0.0,
+        "level_1_directional_patch_anomaly_ratio": 0.0,
+        "level_1_directional_patch_distance_p95": 1.6544413314241047,
+        "level_1_neighbor_patch_difference_mean": 0.667944726557072,
+        "level_1_neighbor_patch_difference_p95": 1.6234236421358605,
+        "level_1_local_patch_anomaly_p90": 7.441334122444312,
+        "level_1_local_patch_anomaly_p95": 7.9056614103302465,
+        "level_1_local_outlier_patch_ratio": 0.0,
+        "level_1_local_inconsistency_score": 5.13867991671466,
+        "level_2_local_patch_count": 37,
+        "level_2_local_energy_log_median": 6.67253760969006,
+        "level_2_local_energy_robust_distance_p95": 3.3396600696294936,
+        "level_2_isolated_high_frequency_patch_ratio": 0.0,
+        "level_2_unusually_smooth_patch_ratio": 0.13513513513513514,
+        "level_2_directional_patch_anomaly_ratio": 0.0,
+        "level_2_directional_patch_distance_p95": 1.2425484206819988,
+        "level_2_neighbor_patch_difference_mean": 0.8164313333900498,
+        "level_2_neighbor_patch_difference_p95": 2.161584106561181,
+        "level_2_local_patch_anomaly_p90": 16.523953283913915,
+        "level_2_local_patch_anomaly_p95": 19.382513422828477,
+        "level_2_local_outlier_patch_ratio": 0.13513513513513514,
+        "level_2_local_inconsistency_score": 26.112147238352023,
+        "local_wavelet_inconsistency_score": 21.91745377402455,
+        "wavelet_heatmap_maximum": 29.263906478881836,
+        "wavelet_heatmap_mean_inside_face": 2.5072906017303467,
+        "wavelet_energy_score": 0.0,
+        "directional_wavelet_score": 3.504476079267737,
+        "calibrated_feature_anomaly_score": null,
+        "final_wavelet_score": 9.643100529426755
+      },
+      "evidence": [
+        "No strong multi-scale texture anomaly",
+        "Raw wavelet energy deviations retained",
+        "Experimental score; calibration unavailable",
+        "A single high-energy patch is not interpreted as definitive fraud"
+      ],
+      "warnings": [],
+      "debug_data": {
+        "possible_attack": "none",
+        "quality_status": "Sufficient",
+        "scoring_mode": "experimental-uncalibrated",
+        "history_length": 10,
+        "stabilized_component_scores": {
+          "wavelet_energy_score": 0.0,
+          "directional_wavelet_score": 0.0,
+          "local_wavelet_inconsistency_score": 5.6272631516675204
+        },
+        "energy_feature_deviations": {
+          "level_1_detail_to_approximation_energy_ratio": 0.0,
+          "level_2_detail_to_approximation_energy_ratio": 0.0,
+          "global_detail_entropy_mean": 0.0,
+          "global_detail_sparsity_mean": 0.0
+        },
+        "calibration_feature_deviations": {},
+        "uncertainty_reasons": [],
+        "wavelet_name": "db2",
+        "decomposition_levels": 2,
+        "boundary_mode": "periodization",
+        "inner_face_mask_used": true,
+        "alignment_applied": false,
+        "pose_alignment_valid": null,
+        "heatmap_interpretation": "Explanatory patch anomaly map; not neural-network attention",
+        "false_positive_factors": [
+          "normal camera or video compression",
+          "blur or denoising",
+          "sharpening",
+          "lighting gradients",
+          "facial hair and natural texture",
+          "resizing"
+        ]
+      }
+    },
+    "residual": {
+      "module_name": "Residual",
+      "available": true,
+      "status": "Analysis uncertain",
+      "calibrated": false,
+      "raw_score": 0.7049476902140742,
+      "stabilized_score": 0.5528616499981837,
+      "display_score": 0.5528616499981837,
+      "confidence": 0.1925,
+      "raw_features": {
+        "analysis_width": 256,
+        "analysis_height": 256,
+        "source_face_width": 417,
+        "source_face_height": 417,
+        "standardization_upscale_ratio": 0.6139088729016786,
+        "clipped_pixel_ratio": 0.0,
+        "residual_mask_effective_ratio": 0.4947509765625,
+        "residual_mask_mean_weight": 0.2340894341468811,
+        "input_intensity_mean": 80.83922576904297,
+        "input_intensity_std": 56.86476516723633,
+        "gaussian_residual_mean": 0.015209353603732278,
+        "gaussian_residual_variance": 60.95103907502605,
+        "gaussian_residual_mean_absolute_deviation": 4.617585239311877,
+        "gaussian_residual_rms_energy": 7.807129459632593,
+        "gaussian_residual_entropy": 0.7316204006755417,
+        "gaussian_residual_kurtosis": 10.870417423525847,
+        "gaussian_residual_positive_fraction": 0.49318403774478525,
+        "gaussian_residual_negative_fraction": 0.5068159622552147,
+        "gaussian_residual_positive_negative_balance": -0.013631924510429494,
+        "gaussian_residual_positive_to_negative_energy_ratio": 1.0838072348562815,
+        "laplacian_mean": -0.10887773967923718,
+        "laplacian_variance": 5898.301923006289,
+        "laplacian_mean_absolute_deviation": 44.50569999549787,
+        "laplacian_rms_energy": 76.80048031990742,
+        "laplacian_entropy": 0.7170005994318268,
+        "laplacian_kurtosis": 11.478296674562142,
+        "laplacian_positive_fraction": 0.5029082807995294,
+        "laplacian_negative_fraction": 0.4970917192004705,
+        "laplacian_positive_negative_balance": 0.0058165615990589115,
+        "laplacian_positive_to_negative_energy_ratio": 0.944937410035681,
+        "residual_variance": 60.95103907502605,
+        "residual_mean_absolute_deviation": 4.617585239311877,
+        "residual_rms_energy": 7.807129459632593,
+        "residual_entropy": 0.7316204006755417,
+        "residual_kurtosis": 10.870417423525847,
+        "positive_negative_residual_balance": -0.013631924510429494,
+        "gradient_mean_magnitude": 58.96658223623581,
+        "gradient_variance": 4656.887340779683,
+        "gradient_energy": 8133.945161402444,
+        "high_frequency_edge_density": 0.5817353120651859,
+        "sobel_x_energy": 4088.8829456826425,
+        "sobel_y_energy": 4045.0622027801905,
+        "gradient_directional_energy_balance": 0.005387391001860054,
+        "local_residual_patch_count": 32,
+        "patch_residual_energy_mean": 54.217449616915935,
+        "patch_residual_energy_std": 53.2407979189227,
+        "patch_residual_energy_variation": 0.9819863954336849,
+        "patch_residual_energy_p95": 151.04598179245409,
+        "local_residual_robust_distance_mean": 0.8417698008564413,
+        "local_residual_robust_distance_p95": 2.188715425303933,
+        "local_residual_outlier_patch_ratio": 0.0,
+        "neighbor_residual_difference_mean": 0.5527883751963614,
+        "neighbor_residual_difference_p95": 1.368904735575396,
+        "local_residual_consistency": 0.5429560195497776,
+        "local_residual_inconsistency_score": 2.349825634046914,
+        "gaussian_residual_score": 0.0,
+        "laplacian_score": 0.0,
+        "gradient_score": 0.0,
+        "calibrated_component_scores": {},
+        "residual_energy_anomaly_direction": 0.0,
+        "residual_energy_direction_label": "balanced",
+        "final_residual_score": 0.7049476902140742
+      },
+      "evidence": [
+        "No strong fine-detail residual anomaly",
+        "Raw two-sided residual deviations retained",
+        "Experimental score; calibration unavailable",
+        "Strong residual energy is not automatically interpreted as fraud"
+      ],
+      "warnings": [
+        "low light can increase ISO noise"
+      ],
+      "debug_data": {
+        "possible_attack": "none",
+        "quality_status": "Uncertain",
+        "scoring_mode": "experimental-uncalibrated",
+        "history_length": 10,
+        "stabilized_component_scores": {
+          "gaussian_residual_score": 0.0,
+          "laplacian_score": 0.0,
+          "gradient_score": 0.0,
+          "local_residual_inconsistency_score": 1.8428721666606123
+        },
+        "stabilized_energy_direction": 0.0,
+        "experimental_feature_deviations": {
+          "gaussian": {
+            "gaussian_residual_variance": {
+              "deviation": 0.0,
+              "direction": 0.0
+            },
+            "gaussian_residual_mean_absolute_deviation": {
+              "deviation": 0.0,
+              "direction": 0.0
+            },
+            "gaussian_residual_rms_energy": {
+              "deviation": 0.0,
+              "direction": 0.0
+            },
+            "gaussian_residual_entropy": {
+              "deviation": 0.0,
+              "direction": 0.0
+            },
+            "gaussian_residual_kurtosis": {
+              "deviation": 0.0,
+              "direction": 0.0
+            },
+            "gaussian_residual_positive_negative_balance": {
+              "deviation": 0.0,
+              "direction": 0.0
+            }
+          },
+          "laplacian": {
+            "laplacian_variance": {
+              "deviation": 0.0,
+              "direction": 0.0
+            },
+            "laplacian_rms_energy": {
+              "deviation": 0.0,
+              "direction": 0.0
+            },
+            "laplacian_kurtosis": {
+              "deviation": 0.0,
+              "direction": 0.0
+            }
+          },
+          "gradient": {
+            "gradient_energy": {
+              "deviation": 0.0,
+              "direction": 0.0
+            },
+            "gradient_mean_magnitude": {
+              "deviation": 0.0,
+              "direction": 0.0
+            },
+            "high_frequency_edge_density": {
+              "deviation": 0.0,
+              "direction": 0.0
+            }
+          }
+        },
+        "calibration_feature_deviations": {},
+        "uncertainty_reasons": [
+          "low light can increase ISO noise"
+        ],
+        "filters": {
+          "gaussian_kernel_size": 5,
+          "gaussian_sigma": 1.2,
+          "laplacian_kernel_size": 3,
+          "sobel_kernel_size": 3,
+          "edge_magnitude_threshold": 24.0
+        },
+        "input_numeric_scale": "single standardized aligned float32 luminance crop; no repeated normalization",
+        "alignment_applied": false,
+        "pose_alignment_valid": null,
+        "supporting_evidence_only": true,
+        "excluded_methods": [
+          "Noiseprint",
+          "neural PRNU",
+          "CNN",
+          "F3-Net",
+          "pretrained networks"
+        ],
+        "confounding_factors": [
+          "blur",
+          "low light and ISO noise",
+          "camera sharpening",
+          "DroidCam/video compression",
+          "denoising",
+          "interpolation",
+          "sensor noise"
+        ]
+      }
+    }
+  },
+  "fusion": {
+    "module_name": "Combined Mathematical Risk",
+    "available": true,
+    "status": "Suspicious mathematical evidence",
+    "calibrated": false,
+    "raw_score": 48.5432234984617,
+    "stabilized_score": 55.24785638553928,
+    "display_score": 55.24785638553928,
+    "confidence": 0.6,
+    "raw_features": {
+      "fft_family_score": 0.1811604191552386,
+      "fft_family_confidence": 0.732,
+      "local_transform_score": 6.779437574195267,
+      "local_transform_confidence": 0.55,
+      "valid_module_count": 5,
+      "valid_modules": [
+        "fft",
+        "moire",
+        "radial_angular",
+        "dct_block",
+        "wavelet"
+      ],
+      "module_contributions": {
+        "fft": {
+          "included": true,
+          "exclusion_reason": null,
+          "score": 0.0,
+          "raw_score": 0.0,
+          "stabilized_score": 0.0,
+          "confidence": 0.6,
+          "weight": 0.34,
+          "effective_weight": 0.20400000000000001,
+          "status": "Normal frequency structure",
+          "calibrated": false,
+          "quality_status": "Sufficient"
+        },
+        "moire": {
+          "included": true,
+          "exclusion_reason": null,
+          "score": 0.0,
+          "raw_score": 0.0,
+          "stabilized_score": 0.0,
+          "confidence": 1.0,
+          "weight": 0.33,
+          "effective_weight": 0.33,
+          "status": "Normal",
+          "calibrated": false,
+          "quality_status": "Sufficient"
+        },
+        "radial_angular": {
+          "included": true,
+          "exclusion_reason": null,
+          "score": 0.6697445799072457,
+          "raw_score": 0.6697445799072457,
+          "stabilized_score": 0.25019520175299226,
+          "confidence": 0.6,
+          "weight": 0.33,
+          "effective_weight": 0.198,
+          "status": "Normal spectral distribution",
+          "calibrated": false,
+          "quality_status": "Sufficient"
+        },
+        "dct_block": {
+          "included": true,
+          "exclusion_reason": null,
+          "score": 4.0,
+          "raw_score": 4.0,
+          "stabilized_score": 4.0,
+          "confidence": 0.55,
+          "weight": 0.34,
+          "effective_weight": 0.18700000000000003,
+          "status": "No strong block anomaly",
+          "calibrated": false,
+          "quality_status": "Sufficient"
+        },
+        "wavelet": {
+          "included": true,
+          "exclusion_reason": null,
+          "score": 9.643100529426755,
+          "raw_score": 9.643100529426755,
+          "stabilized_score": 2.333685476361786,
+          "confidence": 0.55,
+          "weight": 0.33,
+          "effective_weight": 0.18150000000000002,
+          "status": "Normal multi-scale texture",
+          "calibrated": false,
+          "quality_status": "Sufficient"
+        },
+        "residual": {
+          "included": false,
+          "exclusion_reason": "module quality is uncertain or invalid",
+          "score": null,
+          "raw_score": 0.7049476902140742,
+          "stabilized_score": 0.5528616499981837,
+          "confidence": null,
+          "weight": 0.33,
+          "effective_weight": 0.0,
+          "status": "Analysis uncertain",
+          "calibrated": false,
+          "quality_status": "Uncertain"
+        }
+      },
+      "group_details": {
+        "fft_family": {
+          "name": "fft_family",
+          "score": 0.1811604191552386,
+          "confidence": 0.732,
+          "included_modules": [
+            "fft",
+            "moire",
+            "radial_angular"
+          ],
+          "valid_module_count": 3,
+          "effective_weight_sum": 0.732
+        },
+        "local_transform": {
+          "name": "local_transform",
+          "score": 6.779437574195267,
+          "confidence": 0.55,
+          "included_modules": [
+            "dct_block",
+            "wavelet"
+          ],
+          "valid_module_count": 2,
+          "effective_weight_sum": 0.36850000000000005
+        }
+      },
+      "base_group_combined_score": 3.33985457867353,
+      "presentation_artifact": {
+        "clipped_pixel_ratios": {
+          "wavelet": 0.0,
+          "residual": 0.0
+        },
+        "maximum_clipped_pixel_ratio": 0.0,
+        "clipping_score": 0.0,
+        "dct_local_inconsistency_value": 0.0,
+        "dct_support_score": 0.0,
+        "fft_middle_frequency_energy_ratio": 0.1769402369330803,
+        "fft_spectral_entropy": 0.6965802620808501,
+        "fft_high_to_low_energy_ratio": 0.08339100798837373,
+        "fft_support_score": 95.66301149645372,
+        "clipping_support_score": 38.26520459858149,
+        "clipping_support_is_sufficient": false,
+        "clipping_presentation_score": 0.0,
+        "dct_broadband_support_score": 53.78615224921941,
+        "residual_broadband_support_score": 54.654929161415645,
+        "wavelet_broadband_support_score": 31.052683093584537,
+        "transform_broadband_support_score": 48.450295725189186,
+        "transform_broadband_support_count": 2,
+        "broadband_support_score": 74.41728939938469,
+        "broadband_support_is_sufficient": true,
+        "broadband_presentation_score": 48.5432234984617,
+        "combined_support_score": 74.41728939938469,
+        "support_is_sufficient": true,
+        "presentation_mode": "broadband_display_texture",
+        "presentation_artifact_score": 48.5432234984617,
+        "interpretation": "supporting presentation evidence; not a standalone authenticity verdict"
+      },
+      "presentation_artifact_score": 48.5432234984617,
+      "pre_mapping_combined_score": 48.5432234984617,
+      "combined_mathematical_risk_score": 48.5432234984617,
+      "group_contributions": {
+        "fft_family": {
+          "score": 0.1811604191552386,
+          "confidence": 0.732,
+          "weight": 0.45,
+          "effective_weight": 0.3294,
+          "included": true
+        },
+        "local_transform": {
+          "score": 6.779437574195267,
+          "confidence": 0.55,
+          "weight": 0.55,
+          "effective_weight": 0.30250000000000005,
+          "included": true
+        }
+      },
+      "rolling_median": 55.24785638553928,
+      "history_length": 12,
+      "consecutive_suspicious_frame_count": 0,
+      "consecutive_recovery_frame_count": 0,
+      "warning_active": true
+    },
+    "evidence": [
+      "No included module crossed its evidence threshold"
+    ],
+    "warnings": [
+      "WARNING: Mathematical image evidence is consistent with a possible replay or print attack."
+    ],
+    "debug_data": {
+      "possible_attack": "presentation_attack",
+      "quality_status": "Sufficient",
+      "scoring_mode": "experimental",
+      "calibration": {
+        "path": "/home/kero/Desktop/arvis_intern_stuff/pad_mini/model_free_calibration.json",
+        "file_exists": false,
+        "fusion_calibration_compatible": false,
+        "scoring_mode": "experimental"
+      },
+      "two_stage_fusion": true,
+      "shared_fft_family_counted_as_one_final_group": true,
+      "valid_quality_frame_added_to_history": true,
+      "quality": {
+        "valid": true,
+        "reason": null,
+        "blur": 414.41048016621534,
+        "brightness": 60.62760726670462,
+        "exposure_valid": true,
+        "pose_alignment_valid": null,
+        "face_dimensions": [
+          417,
+          417
+        ],
+        "analysis_dimensions": [
+          256,
+          256
+        ]
+      }
+    }
+  },
+  "group_scores": {
+    "fft_family_score": 0.1811604191552386,
+    "fft_family_confidence": 0.732,
+    "local_transform_score": 6.779437574195267,
+    "local_transform_confidence": 0.55
+  },
+  "combined_score": {
+    "raw": 48.5432234984617,
+    "stabilized": 55.24785638553928,
+    "confidence": 0.6,
+    "status": "Suspicious mathematical evidence",
+    "calibrated": false
+  },
+  "final_evidence": [
+    "No included module crossed its evidence threshold"
+  ],
+  "final_warnings": [
+    "WARNING: Mathematical image evidence is consistent with a possible replay or print attack."
+  ],
+  "configuration_thresholds": {
+    "DCT_BLOCK_SIZE": 8,
+    "DCT_DEBUG_DIRECTORY": "/home/kero/Desktop/arvis_intern_stuff/pad_mini/dct_samples",
+    "DCT_EXTREME_SPARSITY_RATIO": 0.96,
+    "DCT_INNER_FACE_MARGIN_RATIO": 0.14,
+    "DCT_LOCAL_PATCH_BLOCK_SIZE": 4,
+    "DCT_LOW_FREQUENCY_MAX_INDEX_SUM": 3,
+    "DCT_MIDDLE_FREQUENCY_MAX_INDEX_SUM": 7,
+    "DCT_MINIMUM_BLOCK_COUNT": 64,
+    "DCT_MINIMUM_SOURCE_SIDE": 96,
+    "DCT_NEAR_ZERO_COEFFICIENT_THRESHOLD": 1.0,
+    "DCT_SCORING_MODE": "auto",
+    "DCT_UNCERTAIN_BLUR_SCORE": 80.0,
+    "DCT_UNCERTAIN_SOURCE_SIDE": 160,
+    "DCT_UNCERTAIN_UPSCALE_RATIO": 1.6,
+    "EXPERIMENTAL_ANGULAR_BIN_COUNT": 36,
+    "EXPERIMENTAL_ANGULAR_FEATURE_PROFILES": {
+      "maximum_angular_energy": {
+        "minimum": 0.0,
+        "maximum": 0.2,
+        "deviation_scale": 0.3,
+        "weight": 0.25
+      },
+      "angular_entropy": {
+        "minimum": 0.25,
+        "maximum": 1.0,
+        "deviation_scale": 0.25,
+        "weight": 0.2
+      },
+      "directional_anisotropy": {
+        "minimum": 0.0,
+        "maximum": 0.75,
+        "deviation_scale": 0.25,
+        "weight": 0.25
+      },
+      "horizontal_concentration": {
+        "minimum": 0.0,
+        "maximum": 0.65,
+        "deviation_scale": 0.35,
+        "weight": 0.1
+      },
+      "vertical_concentration": {
+        "minimum": 0.0,
+        "maximum": 0.65,
+        "deviation_scale": 0.35,
+        "weight": 0.1
+      },
+      "diagonal_concentration": {
+        "minimum": 0.0,
+        "maximum": 0.75,
+        "deviation_scale": 0.25,
+        "weight": 0.1
+      }
+    },
+    "EXPERIMENTAL_ANGULAR_SCORE_WEIGHT": 0.45,
+    "EXPERIMENTAL_ANGULAR_SECTOR_HALF_WIDTH_DEGREES": 12.5,
+    "EXPERIMENTAL_CALIBRATED_PROFILE_DEVIATION_FULL": 0.35,
+    "EXPERIMENTAL_CALIBRATED_PROFILE_WEIGHT": 0.5,
+    "EXPERIMENTAL_DCT_BAND_FEATURE_PROFILES": {
+      "low_frequency_ac_energy_ratio": {
+        "minimum": 0.3,
+        "maximum": 0.995,
+        "deviation_scale": 0.3,
+        "weight": 0.3
+      },
+      "middle_frequency_ac_energy_ratio": {
+        "minimum": 0.003,
+        "maximum": 0.55,
+        "deviation_scale": 0.3,
+        "weight": 0.25
+      },
+      "high_frequency_ac_energy_ratio": {
+        "minimum": 0.0001,
+        "maximum": 0.3,
+        "deviation_scale": 0.25,
+        "weight": 0.25
+      },
+      "ac_to_dc_ratio_mean": {
+        "minimum": 5e-05,
+        "maximum": 0.75,
+        "deviation_scale": 0.5,
+        "weight": 0.2
+      }
+    },
+    "EXPERIMENTAL_DCT_BLOCKINESS_RATIO_FULL": 2.2,
+    "EXPERIMENTAL_DCT_BLOCKINESS_RATIO_START": 1.08,
+    "EXPERIMENTAL_DCT_BLOCK_STRUCTURE_SCORE": 58.0,
+    "EXPERIMENTAL_DCT_CALIBRATION_BLEND_WEIGHT": 0.55,
+    "EXPERIMENTAL_DCT_COMPONENT_WEIGHTS": {
+      "dct_band_anomaly_score": 0.3,
+      "coefficient_sparsity_score": 0.2,
+      "blockiness_score": 0.3,
+      "local_dct_inconsistency_score": 0.2
+    },
+    "EXPERIMENTAL_DCT_EVIDENCE_SCORE": 55.0,
+    "EXPERIMENTAL_DCT_HISTORY_SIZE": 10,
+    "EXPERIMENTAL_DCT_INVALID_RESET_FRAMES": 4,
+    "EXPERIMENTAL_DCT_LOCAL_DISTANCE_FULL": 7.0,
+    "EXPERIMENTAL_DCT_LOCAL_DISTANCE_START": 2.0,
+    "EXPERIMENTAL_DCT_LOCAL_INCONSISTENCY_SCORE": 62.0,
+    "EXPERIMENTAL_DCT_LOCAL_OUTLIER_DISTANCE": 3.5,
+    "EXPERIMENTAL_DCT_LOCAL_OUTLIER_RATIO_FULL": 0.35,
+    "EXPERIMENTAL_DCT_MAXIMUM_CONFIDENCE": 0.55,
+    "EXPERIMENTAL_DCT_MINIMUM_HISTORY": 5,
+    "EXPERIMENTAL_DCT_REGION_IOU_RESET_THRESHOLD": 0.45,
+    "EXPERIMENTAL_DCT_SPARSITY_FEATURE_PROFILES": {
+      "near_zero_ac_coefficient_ratio": {
+        "minimum": 0.0,
+        "maximum": 0.88,
+        "deviation_scale": 0.12,
+        "weight": 0.55
+      },
+      "coefficient_entropy_mean": {
+        "minimum": 0.08,
+        "maximum": 0.98,
+        "deviation_scale": 0.2,
+        "weight": 0.25
+      },
+      "coefficient_kurtosis_global": {
+        "minimum": 1.0,
+        "maximum": 80.0,
+        "deviation_scale": 80.0,
+        "weight": 0.2
+      }
+    },
+    "EXPERIMENTAL_DCT_SUSPICIOUS_SCORE": 68.0,
+    "EXPERIMENTAL_FFT_ANALYSIS_OUTER_RADIUS": 0.92,
+    "EXPERIMENTAL_FFT_DC_EXCLUSION_RADIUS": 0.02,
+    "EXPERIMENTAL_FFT_EVIDENCE_DEVIATION": 0.5,
+    "EXPERIMENTAL_FFT_FEATURE_PROFILES": {
+      "low_frequency_energy_ratio": {
+        "minimum": 0.05,
+        "maximum": 0.95,
+        "deviation_scale": 0.2,
+        "weight": 0.2
+      },
+      "middle_frequency_energy_ratio": {
+        "minimum": 0.03,
+        "maximum": 0.8,
+        "deviation_scale": 0.2,
+        "weight": 0.1
+      },
+      "high_frequency_energy_ratio": {
+        "minimum": 0.005,
+        "maximum": 0.65,
+        "deviation_scale": 0.25,
+        "weight": 0.2
+      },
+      "spectral_centroid": {
+        "minimum": 0.05,
+        "maximum": 0.7,
+        "deviation_scale": 0.2,
+        "weight": 0.15
+      },
+      "spectral_entropy": {
+        "minimum": 0.1,
+        "maximum": 0.99,
+        "deviation_scale": 0.2,
+        "weight": 0.15
+      },
+      "spectral_slope": {
+        "minimum": -8.0,
+        "maximum": 0.25,
+        "deviation_scale": 3.0,
+        "weight": 0.1
+      },
+      "high_to_low_energy_ratio": {
+        "minimum": 0.005,
+        "maximum": 5.0,
+        "deviation_scale": 3.0,
+        "weight": 0.1
+      }
+    },
+    "EXPERIMENTAL_FFT_HIGH_ANOMALY_SCORE": 85.0,
+    "EXPERIMENTAL_FFT_HIGH_INNER_RADIUS": 0.45,
+    "EXPERIMENTAL_FFT_HIGH_OUTER_RADIUS": 0.92,
+    "EXPERIMENTAL_FFT_HISTORY_SIZE": 12,
+    "EXPERIMENTAL_FFT_INVALID_RESET_FRAMES": 3,
+    "EXPERIMENTAL_FFT_LOW_INNER_RADIUS": 0.02,
+    "EXPERIMENTAL_FFT_LOW_OUTER_RADIUS": 0.16,
+    "EXPERIMENTAL_FFT_MAXIMUM_CONFIDENCE": 0.6,
+    "EXPERIMENTAL_FFT_MID_INNER_RADIUS": 0.16,
+    "EXPERIMENTAL_FFT_MID_OUTER_RADIUS": 0.45,
+    "EXPERIMENTAL_FFT_MINIMUM_SLOPE_BIN_COUNT": 8,
+    "EXPERIMENTAL_FFT_MINIMUM_VALID_FRAMES": 6,
+    "EXPERIMENTAL_FFT_RADIAL_SLOPE_BIN_COUNT": 48,
+    "EXPERIMENTAL_FFT_SUSPICIOUS_SCORE": 60.0,
+    "EXPERIMENTAL_GAUSSIAN_RESIDUAL_FEATURE_PROFILES": {
+      "gaussian_residual_variance": {
+        "minimum": 6.25,
+        "maximum": 625.0,
+        "deviation_scale": 6.25,
+        "weight": 0.24
+      },
+      "gaussian_residual_mean_absolute_deviation": {
+        "minimum": 1.5,
+        "maximum": 20.0,
+        "deviation_scale": 1.5,
+        "weight": 0.2
+      },
+      "gaussian_residual_rms_energy": {
+        "minimum": 2.5,
+        "maximum": 25.0,
+        "deviation_scale": 2.5,
+        "weight": 0.24
+      },
+      "gaussian_residual_entropy": {
+        "minimum": 0.1,
+        "maximum": 0.99,
+        "deviation_scale": 0.2,
+        "weight": 0.12
+      },
+      "gaussian_residual_kurtosis": {
+        "minimum": 1.0,
+        "maximum": 40.0,
+        "deviation_scale": 40.0,
+        "weight": 0.1
+      },
+      "gaussian_residual_positive_negative_balance": {
+        "minimum": -0.25,
+        "maximum": 0.25,
+        "deviation_scale": 0.5,
+        "weight": 0.1
+      }
+    },
+    "EXPERIMENTAL_GRADIENT_FEATURE_PROFILES": {
+      "gradient_energy": {
+        "minimum": 100.0,
+        "maximum": 25000.0,
+        "deviation_scale": 100.0,
+        "weight": 0.5
+      },
+      "gradient_mean_magnitude": {
+        "minimum": 5.0,
+        "maximum": 100.0,
+        "deviation_scale": 5.0,
+        "weight": 0.25
+      },
+      "high_frequency_edge_density": {
+        "minimum": 0.01,
+        "maximum": 0.85,
+        "deviation_scale": 0.01,
+        "weight": 0.25
+      }
+    },
+    "EXPERIMENTAL_LAPLACIAN_FEATURE_PROFILES": {
+      "laplacian_variance": {
+        "minimum": 100.0,
+        "maximum": 8000.0,
+        "deviation_scale": 100.0,
+        "weight": 0.55
+      },
+      "laplacian_rms_energy": {
+        "minimum": 10.0,
+        "maximum": 90.0,
+        "deviation_scale": 10.0,
+        "weight": 0.3
+      },
+      "laplacian_kurtosis": {
+        "minimum": 1.0,
+        "maximum": 50.0,
+        "deviation_scale": 50.0,
+        "weight": 0.15
+      }
+    },
+    "EXPERIMENTAL_MODEL_FREE_FRAME_EDGE_MARGIN_RATIO": 0.01,
+    "EXPERIMENTAL_MODEL_FREE_MAXIMUM_BRIGHTNESS": 215.0,
+    "EXPERIMENTAL_MODEL_FREE_MINIMUM_BLUR_SCORE": 55.0,
+    "EXPERIMENTAL_MODEL_FREE_MINIMUM_BRIGHTNESS": 45.0,
+    "EXPERIMENTAL_MODEL_FREE_MINIMUM_FACE_AREA_RATIO": 0.035,
+    "EXPERIMENTAL_MODEL_FREE_MINIMUM_FACE_SIDE": 96,
+    "EXPERIMENTAL_MOIRE_BACKGROUND_SIGMA": 4.0,
+    "EXPERIMENTAL_MOIRE_DIRECTION_BIN_COUNT": 12,
+    "EXPERIMENTAL_MOIRE_DIRECTION_EVIDENCE_SCORE": 0.5,
+    "EXPERIMENTAL_MOIRE_DIRECTION_SHARE_FULL": 0.75,
+    "EXPERIMENTAL_MOIRE_DIRECTION_SHARE_START": 0.35,
+    "EXPERIMENTAL_MOIRE_DIRECTION_WEIGHT": 0.18,
+    "EXPERIMENTAL_MOIRE_ENERGY_CONCENTRATION_FULL": 0.04,
+    "EXPERIMENTAL_MOIRE_ENERGY_CONCENTRATION_START": 0.002,
+    "EXPERIMENTAL_MOIRE_HISTORY_SIZE": 10,
+    "EXPERIMENTAL_MOIRE_INNER_RADIUS": 0.14,
+    "EXPERIMENTAL_MOIRE_INVALID_RESET_FRAMES": 4,
+    "EXPERIMENTAL_MOIRE_LOCAL_CONTRAST_SIZE": 9,
+    "EXPERIMENTAL_MOIRE_LOCAL_MAXIMUM_SIZE": 5,
+    "EXPERIMENTAL_MOIRE_MAXIMUM_PEAK_COUNT": 24,
+    "EXPERIMENTAL_MOIRE_MINIMUM_CONTRAST_Z_SCORE": 4.0,
+    "EXPERIMENTAL_MOIRE_MINIMUM_HISTORY": 6,
+    "EXPERIMENTAL_MOIRE_MINIMUM_PEAK_ENERGY_SHARE": 0.0002,
+    "EXPERIMENTAL_MOIRE_MINIMUM_PEAK_Z_SCORE": 6.5,
+    "EXPERIMENTAL_MOIRE_MINIMUM_PERIODIC_PEAK_COUNT": 2,
+    "EXPERIMENTAL_MOIRE_MINIMUM_SYMMETRY_AMPLITUDE_RATIO": 0.35,
+    "EXPERIMENTAL_MOIRE_OUTER_RADIUS": 0.82,
+    "EXPERIMENTAL_MOIRE_PEAK_COUNT_WEIGHT": 0.2,
+    "EXPERIMENTAL_MOIRE_PEAK_ENERGY_WEIGHT": 0.25,
+    "EXPERIMENTAL_MOIRE_PEAK_MINIMUM_DISTANCE": 5,
+    "EXPERIMENTAL_MOIRE_PEAK_PATCH_RADIUS": 2,
+    "EXPERIMENTAL_MOIRE_PERIODIC_EVIDENCE_SCORE": 0.55,
+    "EXPERIMENTAL_MOIRE_PERIODIC_WEIGHT": 0.6,
+    "EXPERIMENTAL_MOIRE_PROMINENCE_WEIGHT": 0.55,
+    "EXPERIMENTAL_MOIRE_REGION_IOU_RESET_THRESHOLD": 0.45,
+    "EXPERIMENTAL_MOIRE_RELEASE_SCORE": 52.0,
+    "EXPERIMENTAL_MOIRE_REQUIRED_RELEASE_FRAMES": 4,
+    "EXPERIMENTAL_MOIRE_REQUIRED_SUSPICIOUS_FRAMES": 4,
+    "EXPERIMENTAL_MOIRE_SCREEN_REPLAY_DIRECTION_SCORE": 0.35,
+    "EXPERIMENTAL_MOIRE_SCREEN_REPLAY_SCORE": 86.0,
+    "EXPERIMENTAL_MOIRE_SCREEN_REPLAY_SYMMETRY_SCORE": 0.45,
+    "EXPERIMENTAL_MOIRE_STRONG_PEAK_Z_SCORE": 11.0,
+    "EXPERIMENTAL_MOIRE_SUPPORTING_PERIODIC_SCORE": 0.45,
+    "EXPERIMENTAL_MOIRE_SUSPICIOUS_SCORE": 72.0,
+    "EXPERIMENTAL_MOIRE_SYMMETRY_AMPLITUDE_WEIGHT": 0.7,
+    "EXPERIMENTAL_MOIRE_SYMMETRY_DISTANCE_WEIGHT": 0.3,
+    "EXPERIMENTAL_MOIRE_SYMMETRY_EVIDENCE_SCORE": 0.55,
+    "EXPERIMENTAL_MOIRE_SYMMETRY_TOLERANCE_PIXELS": 3.0,
+    "EXPERIMENTAL_MOIRE_SYMMETRY_WEIGHT": 0.22,
+    "EXPERIMENTAL_MOIRE_TARGET_PEAK_COUNT": 8,
+    "EXPERIMENTAL_PRESENTATION_BROADBAND_FFT_MINIMUM": 0.65,
+    "EXPERIMENTAL_PRESENTATION_BROADBAND_FFT_WEIGHT": 0.55,
+    "EXPERIMENTAL_PRESENTATION_BROADBAND_MINIMUM_SUPPORT_COUNT": 2,
+    "EXPERIMENTAL_PRESENTATION_BROADBAND_SUPPORT_FULL": 0.95,
+    "EXPERIMENTAL_PRESENTATION_BROADBAND_SUPPORT_START": 0.55,
+    "EXPERIMENTAL_PRESENTATION_BROADBAND_TRANSFORM_MINIMUM": 0.45,
+    "EXPERIMENTAL_PRESENTATION_BROADBAND_TRANSFORM_WEIGHT": 0.45,
+    "EXPERIMENTAL_PRESENTATION_CLIPPING_BASE_WEIGHT": 0.55,
+    "EXPERIMENTAL_PRESENTATION_CLIPPING_FULL": 0.24,
+    "EXPERIMENTAL_PRESENTATION_CLIPPING_START": 0.1,
+    "EXPERIMENTAL_PRESENTATION_DCT_DENSE_COEFFICIENT_FULL": 0.35,
+    "EXPERIMENTAL_PRESENTATION_DCT_DENSE_COEFFICIENT_START": 0.55,
+    "EXPERIMENTAL_PRESENTATION_DCT_HIGH_FULL": 0.045,
+    "EXPERIMENTAL_PRESENTATION_DCT_HIGH_START": 0.008,
+    "EXPERIMENTAL_PRESENTATION_DCT_LOCAL_FULL": 60.0,
+    "EXPERIMENTAL_PRESENTATION_DCT_LOCAL_START": 25.0,
+    "EXPERIMENTAL_PRESENTATION_DCT_MIDDLE_FULL": 0.17,
+    "EXPERIMENTAL_PRESENTATION_DCT_MIDDLE_START": 0.075,
+    "EXPERIMENTAL_PRESENTATION_DCT_SUPPORT_WEIGHT": 0.6,
+    "EXPERIMENTAL_PRESENTATION_EDGE_DENSITY_FULL": 0.75,
+    "EXPERIMENTAL_PRESENTATION_EDGE_DENSITY_START": 0.48,
+    "EXPERIMENTAL_PRESENTATION_FFT_ENTROPY_FULL": 0.72,
+    "EXPERIMENTAL_PRESENTATION_FFT_ENTROPY_START": 0.54,
+    "EXPERIMENTAL_PRESENTATION_FFT_HIGH_TO_LOW_FULL": 0.08,
+    "EXPERIMENTAL_PRESENTATION_FFT_HIGH_TO_LOW_START": 0.015,
+    "EXPERIMENTAL_PRESENTATION_FFT_MIDDLE_FULL": 0.14,
+    "EXPERIMENTAL_PRESENTATION_FFT_MIDDLE_START": 0.055,
+    "EXPERIMENTAL_PRESENTATION_FFT_SUPPORT_WEIGHT": 0.4,
+    "EXPERIMENTAL_PRESENTATION_LAPLACIAN_VARIANCE_FULL": 8500.0,
+    "EXPERIMENTAL_PRESENTATION_LAPLACIAN_VARIANCE_START": 1500.0,
+    "EXPERIMENTAL_PRESENTATION_MINIMUM_SUPPORT": 0.2,
+    "EXPERIMENTAL_PRESENTATION_RESIDUAL_RMS_FULL": 10.0,
+    "EXPERIMENTAL_PRESENTATION_RESIDUAL_RMS_START": 4.0,
+    "EXPERIMENTAL_PRESENTATION_SUPPORT_WEIGHT": 0.45,
+    "EXPERIMENTAL_PRESENTATION_TRANSFORM_DCT_WEIGHT": 0.35,
+    "EXPERIMENTAL_PRESENTATION_TRANSFORM_RESIDUAL_WEIGHT": 0.4,
+    "EXPERIMENTAL_PRESENTATION_TRANSFORM_WAVELET_WEIGHT": 0.25,
+    "EXPERIMENTAL_PRESENTATION_WAVELET_DENSE_DETAIL_FULL": 0.2,
+    "EXPERIMENTAL_PRESENTATION_WAVELET_DENSE_DETAIL_START": 0.36,
+    "EXPERIMENTAL_RADIAL_ANGULAR_EVIDENCE_DEVIATION": 0.5,
+    "EXPERIMENTAL_RADIAL_ANGULAR_HISTORY_SIZE": 10,
+    "EXPERIMENTAL_RADIAL_ANGULAR_INNER_RADIUS": 0.02,
+    "EXPERIMENTAL_RADIAL_ANGULAR_INVALID_RESET_FRAMES": 4,
+    "EXPERIMENTAL_RADIAL_ANGULAR_MAXIMUM_CONFIDENCE": 0.6,
+    "EXPERIMENTAL_RADIAL_ANGULAR_MINIMUM_HISTORY": 6,
+    "EXPERIMENTAL_RADIAL_ANGULAR_OUTER_RADIUS": 0.92,
+    "EXPERIMENTAL_RADIAL_ANGULAR_REGION_IOU_RESET_THRESHOLD": 0.45,
+    "EXPERIMENTAL_RADIAL_ANGULAR_SUSPICIOUS_SCORE": 60.0,
+    "EXPERIMENTAL_RADIAL_BIN_COUNT": 48,
+    "EXPERIMENTAL_RADIAL_DIRECTIONAL_STATUS_SCORE": 60.0,
+    "EXPERIMENTAL_RADIAL_FEATURE_PROFILES": {
+      "radial_spectral_slope": {
+        "minimum": -8.0,
+        "maximum": 0.5,
+        "deviation_scale": 3.0,
+        "weight": 0.25
+      },
+      "slope_fit_error": {
+        "minimum": 0.0,
+        "maximum": 0.65,
+        "deviation_scale": 0.5,
+        "weight": 0.2
+      },
+      "radial_entropy": {
+        "minimum": 0.15,
+        "maximum": 1.0,
+        "deviation_scale": 0.2,
+        "weight": 0.15
+      },
+      "dominant_radial_energy_ratio": {
+        "minimum": 0.0,
+        "maximum": 0.2,
+        "deviation_scale": 0.3,
+        "weight": 0.2
+      },
+      "narrow_band_energy_concentration": {
+        "minimum": 1.0,
+        "maximum": 8.0,
+        "deviation_scale": 8.0,
+        "weight": 0.2
+      }
+    },
+    "EXPERIMENTAL_RADIAL_MINIMUM_FIT_BIN_COUNT": 8,
+    "EXPERIMENTAL_RADIAL_NARROW_BAND_NEIGHBOR_COUNT": 2,
+    "EXPERIMENTAL_RADIAL_NARROW_BAND_STATUS_SCORE": 60.0,
+    "EXPERIMENTAL_RADIAL_SCORE_WEIGHT": 0.55,
+    "EXPERIMENTAL_RESIDUAL_CALIBRATION_BLEND_WEIGHT": 0.6,
+    "EXPERIMENTAL_RESIDUAL_COMPONENT_WEIGHTS": {
+      "gaussian_residual_score": 0.3,
+      "laplacian_score": 0.2,
+      "gradient_score": 0.2,
+      "local_residual_inconsistency_score": 0.3
+    },
+    "EXPERIMENTAL_RESIDUAL_ENERGY_STATUS_SCORE": 55.0,
+    "EXPERIMENTAL_RESIDUAL_EVIDENCE_SCORE": 55.0,
+    "EXPERIMENTAL_RESIDUAL_HISTORY_SIZE": 10,
+    "EXPERIMENTAL_RESIDUAL_INVALID_RESET_FRAMES": 4,
+    "EXPERIMENTAL_RESIDUAL_LOCAL_DISTANCE_FULL": 6.0,
+    "EXPERIMENTAL_RESIDUAL_LOCAL_DISTANCE_START": 2.0,
+    "EXPERIMENTAL_RESIDUAL_LOCAL_OUTLIER_DISTANCE": 3.0,
+    "EXPERIMENTAL_RESIDUAL_LOCAL_OUTLIER_RATIO_FULL": 0.35,
+    "EXPERIMENTAL_RESIDUAL_LOCAL_STATUS_SCORE": 50.0,
+    "EXPERIMENTAL_RESIDUAL_MAXIMUM_CONFIDENCE": 0.55,
+    "EXPERIMENTAL_RESIDUAL_MINIMUM_HISTORY": 5,
+    "EXPERIMENTAL_RESIDUAL_NEIGHBOR_DIFFERENCE_FULL": 5.0,
+    "EXPERIMENTAL_RESIDUAL_NEIGHBOR_DIFFERENCE_START": 1.5,
+    "EXPERIMENTAL_RESIDUAL_REGION_IOU_RESET_THRESHOLD": 0.45,
+    "EXPERIMENTAL_RESIDUAL_SUSPICIOUS_SCORE": 68.0,
+    "EXPERIMENTAL_WAVELET_ANISOTROPY_FULL": 0.8,
+    "EXPERIMENTAL_WAVELET_ANISOTROPY_START": 0.35,
+    "EXPERIMENTAL_WAVELET_CALIBRATION_BLEND_WEIGHT": 0.55,
+    "EXPERIMENTAL_WAVELET_COMPONENT_WEIGHTS": {
+      "wavelet_energy_score": 0.35,
+      "directional_wavelet_score": 0.25,
+      "local_wavelet_inconsistency_score": 0.4
+    },
+    "EXPERIMENTAL_WAVELET_DIRECTIONAL_STATUS_SCORE": 60.0,
+    "EXPERIMENTAL_WAVELET_DIRECTION_DOMINANCE_FULL": 0.9,
+    "EXPERIMENTAL_WAVELET_DIRECTION_DOMINANCE_START": 0.55,
+    "EXPERIMENTAL_WAVELET_ENERGY_FEATURE_PROFILES": {
+      "level_1_detail_to_approximation_energy_ratio": {
+        "minimum": 1e-05,
+        "maximum": 0.45,
+        "deviation_scale": 0.4,
+        "weight": 0.3
+      },
+      "level_2_detail_to_approximation_energy_ratio": {
+        "minimum": 1e-05,
+        "maximum": 0.55,
+        "deviation_scale": 0.45,
+        "weight": 0.25
+      },
+      "global_detail_entropy_mean": {
+        "minimum": 0.08,
+        "maximum": 0.99,
+        "deviation_scale": 0.2,
+        "weight": 0.2
+      },
+      "global_detail_sparsity_mean": {
+        "minimum": 0.0,
+        "maximum": 0.92,
+        "deviation_scale": 0.08,
+        "weight": 0.25
+      }
+    },
+    "EXPERIMENTAL_WAVELET_EVIDENCE_SCORE": 55.0,
+    "EXPERIMENTAL_WAVELET_HISTORY_SIZE": 10,
+    "EXPERIMENTAL_WAVELET_INVALID_RESET_FRAMES": 4,
+    "EXPERIMENTAL_WAVELET_LOCAL_DISTANCE_FULL": 6.0,
+    "EXPERIMENTAL_WAVELET_LOCAL_DISTANCE_START": 2.0,
+    "EXPERIMENTAL_WAVELET_LOCAL_OUTLIER_DISTANCE": 3.0,
+    "EXPERIMENTAL_WAVELET_LOCAL_OUTLIER_RATIO_FULL": 0.35,
+    "EXPERIMENTAL_WAVELET_LOCAL_STATUS_SCORE": 50.0,
+    "EXPERIMENTAL_WAVELET_MAXIMUM_CONFIDENCE": 0.55,
+    "EXPERIMENTAL_WAVELET_MINIMUM_HISTORY": 5,
+    "EXPERIMENTAL_WAVELET_NEIGHBOR_DIFFERENCE_FULL": 5.0,
+    "EXPERIMENTAL_WAVELET_NEIGHBOR_DIFFERENCE_START": 1.5,
+    "EXPERIMENTAL_WAVELET_REGION_IOU_RESET_THRESHOLD": 0.45,
+    "EXPERIMENTAL_WAVELET_SUSPICIOUS_SCORE": 68.0,
+    "MATHEMATICAL_FUSION_CONFIG": {
+      "module_groups": {
+        "fft_family": [
+          "fft",
+          "moire",
+          "radial_angular"
+        ],
+        "local_transform": [
+          "dct_block",
+          "wavelet",
+          "residual"
+        ]
+      },
+      "module_weights": {
+        "fft": 0.34,
+        "moire": 0.33,
+        "radial_angular": 0.33,
+        "dct_block": 0.34,
+        "wavelet": 0.33,
+        "residual": 0.33
+      },
+      "group_weights": {
+        "fft_family": 0.45,
+        "local_transform": 0.55
+      },
+      "minimum_valid_modules": 4,
+      "minimum_valid_modules_per_group": {
+        "fft_family": 1,
+        "local_transform": 1
+      },
+      "minimum_effective_confidence": 0.01,
+      "uncalibrated_confidence_cap": 0.6,
+      "history_size": 12,
+      "minimum_history": 5,
+      "weak_anomaly_score": 25.0,
+      "suspicious_score": 50.0,
+      "high_risk_score": 75.0,
+      "recovery_score": 42.0,
+      "required_suspicious_frames": 3,
+      "required_recovery_frames": 3,
+      "invalid_reset_frames": 4,
+      "region_iou_reset_threshold": 0.45,
+      "module_evidence_score": 50.0
+    },
+    "MODEL_FREE_ANALYSIS_IMAGE_SIZE": 256,
+    "MODEL_FREE_CALIBRATION_FILE_PATH": "/home/kero/Desktop/arvis_intern_stuff/pad_mini/model_free_calibration.json",
+    "MODEL_FREE_DEBUG_DIRECTORY": "/home/kero/Desktop/arvis_intern_stuff/pad_mini/model_free_debug",
+    "MODEL_FREE_DEBUG_MODE": false,
+    "MODEL_FREE_FFT_WINDOW_TYPE": "hann",
+    "MODEL_FREE_GLOBAL_FFT_SCORING_MODE": "experimental",
+    "MODEL_FREE_MODULE_ENABLED": {
+      "global_fft": true,
+      "moire": true,
+      "radial_angular_spectrum": true,
+      "dct_block_compression": true,
+      "wavelet": true,
+      "high_pass_residual": true
+    },
+    "RESIDUAL_CLIPPED_PIXEL_HIGH": 253.0,
+    "RESIDUAL_CLIPPED_PIXEL_LOW": 2.0,
+    "RESIDUAL_DEBUG_DIRECTORY": "/home/kero/Desktop/arvis_intern_stuff/pad_mini/residual_samples",
+    "RESIDUAL_EDGE_MAGNITUDE_THRESHOLD": 24.0,
+    "RESIDUAL_GAUSSIAN_KERNEL_SIZE": 5,
+    "RESIDUAL_GAUSSIAN_SIGMA": 1.2,
+    "RESIDUAL_LAPLACIAN_KERNEL_SIZE": 3,
+    "RESIDUAL_LOCAL_MINIMUM_MASK_COVERAGE": 0.3,
+    "RESIDUAL_LOCAL_PATCH_SIZE": 32,
+    "RESIDUAL_LOW_LIGHT_NOISE_RMS": 12.0,
+    "RESIDUAL_MASK_BOTTOM_RAMP_START_RATIO": 0.82,
+    "RESIDUAL_MASK_EYE_BAND_CENTER_RATIO": 0.38,
+    "RESIDUAL_MASK_EYE_BAND_HALF_HEIGHT_RATIO": 0.075,
+    "RESIDUAL_MASK_EYE_BAND_WEIGHT": 0.45,
+    "RESIDUAL_MASK_HORIZONTAL_RADIUS_RATIO": 0.4,
+    "RESIDUAL_MASK_TOP_RAMP_END_RATIO": 0.25,
+    "RESIDUAL_MASK_VERTICAL_RADIUS_RATIO": 0.45,
+    "RESIDUAL_MINIMUM_MASK_WEIGHT": 0.08,
+    "RESIDUAL_MINIMUM_SOURCE_SIDE": 96,
+    "RESIDUAL_SCORING_MODE": "auto",
+    "RESIDUAL_SOBEL_KERNEL_SIZE": 3,
+    "RESIDUAL_UNAVAILABLE_CLIPPING_RATIO": 0.25,
+    "RESIDUAL_UNCERTAIN_BLUR_SCORE": 90.0,
+    "RESIDUAL_UNCERTAIN_CLIPPING_RATIO": 0.08,
+    "RESIDUAL_UNCERTAIN_MAXIMUM_BRIGHTNESS": 205.0,
+    "RESIDUAL_UNCERTAIN_MINIMUM_BRIGHTNESS": 70.0,
+    "RESIDUAL_UNCERTAIN_SOURCE_SIDE": 160,
+    "RESIDUAL_UNCERTAIN_UPSCALE_RATIO": 1.6,
+    "WAVELET_BOUNDARY_MODE": "periodization",
+    "WAVELET_CLIPPED_PIXEL_HIGH": 253.0,
+    "WAVELET_CLIPPED_PIXEL_LOW": 2.0,
+    "WAVELET_DEBUG_DIRECTORY": "/home/kero/Desktop/arvis_intern_stuff/pad_mini/wavelet_samples",
+    "WAVELET_DECOMPOSITION_LEVELS": 2,
+    "WAVELET_DETAIL_NEAR_ZERO_THRESHOLD": 1.0,
+    "WAVELET_INNER_MASK_HORIZONTAL_RADIUS_RATIO": 0.4,
+    "WAVELET_INNER_MASK_VERTICAL_RADIUS_RATIO": 0.45,
+    "WAVELET_LOCAL_MINIMUM_MASK_COVERAGE": 0.35,
+    "WAVELET_LOCAL_PATCH_FACE_SIZE": 32,
+    "WAVELET_MINIMUM_SOURCE_SIDE": 96,
+    "WAVELET_NAME": "db2",
+    "WAVELET_SCORING_MODE": "auto",
+    "WAVELET_UNAVAILABLE_CLIPPING_RATIO": 0.25,
+    "WAVELET_UNCERTAIN_BLUR_SCORE": 80.0,
+    "WAVELET_UNCERTAIN_CLIPPING_RATIO": 0.08,
+    "WAVELET_UNCERTAIN_SOURCE_SIDE": 160,
+    "WAVELET_UNCERTAIN_UPSCALE_RATIO": 1.6,
+    "WAVELET_USE_INNER_FACE_MASK": true
+  },
+  "limitations": [
+    "The output is supporting evidence, not an authenticity verdict.",
+    "The correlated FFT modules are fused as one spectral family.",
+    "Unavailable modules are excluded rather than assigned a zero score.",
+    "Camera, lighting, blur, compression and resizing can affect every module."
+  ]
+}

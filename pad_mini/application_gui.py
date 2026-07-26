@@ -1,5 +1,6 @@
 """Yuz kalite uygulamasi icin basit Tkinter arayuzu."""
 
+import math
 import tkinter as tk
 from tkinter import messagebox, ttk
 
@@ -38,13 +39,17 @@ class FaceQualityGui:
         self.camera = None
         self.camera_sources = {}
         self.preview_photo = None
+        self.frequency_photo = None
         self.frame_job = None
         self.last_frame_number = 0
 
         self.quality_value = tk.StringVar(value="Bekleniyor")
         self.alignment_value = tk.StringVar(value="Bekleniyor")
         self.metrics_value = tk.StringVar(value="Yüz henüz analiz edilmedi")
-        self.pre_control_value = tk.StringVar(value="FFT: Bekleniyor")
+        self.pre_control_value = tk.StringVar(value="PreControl: Bekleniyor")
+        self.frequency_value = tk.StringVar(
+            value="FFT için kamerayı başlatın."
+        )
         self.connection_value = tk.StringVar(value="Kamera kapalı")
         self.camera_value = tk.StringVar()
         self.droidcam_address_value = tk.StringVar(
@@ -149,6 +154,8 @@ class FaceQualityGui:
         )
         self.preview_label.grid(row=0, column=0, sticky="nsew")
 
+        self._build_frequency_panel(preview_panel)
+
         connection_bar = tk.Label(
             preview_panel,
             textvariable=self.connection_value,
@@ -159,7 +166,90 @@ class FaceQualityGui:
             pady=9,
             font=("Arial", 9),
         )
-        connection_bar.grid(row=1, column=0, sticky="ew")
+        connection_bar.grid(row=2, column=0, sticky="ew")
+
+    def _build_frequency_panel(self, parent):
+        frequency_panel = tk.Frame(
+            parent,
+            bg=self.PANEL,
+            padx=14,
+            pady=12,
+        )
+        frequency_panel.grid(
+            row=1,
+            column=0,
+            sticky="ew",
+            pady=(8, 0),
+        )
+        frequency_panel.grid_columnconfigure(1, weight=1)
+
+        tk.Label(
+            frequency_panel,
+            text="Canlı Frekans Spektrumu (FFT)",
+            bg=self.PANEL,
+            fg=self.TEXT,
+            font=("Arial", 12, "bold"),
+        ).grid(row=0, column=0, columnspan=2, sticky="w")
+        tk.Label(
+            frequency_panel,
+            text=(
+                "Merkez düşük, dış bölgeler yüksek uzamsal frekanstır; "
+                "değerler normalize edilmiştir (Hz değildir)."
+            ),
+            bg=self.PANEL,
+            fg=self.MUTED,
+            justify="left",
+            anchor="w",
+            wraplength=620,
+            font=("Arial", 8),
+        ).grid(
+            row=1,
+            column=0,
+            columnspan=2,
+            sticky="ew",
+            pady=(3, 9),
+        )
+
+        spectrum_holder = tk.Frame(
+            frequency_panel,
+            bg="#050b14",
+            width=230,
+            height=180,
+        )
+        spectrum_holder.grid(row=2, column=0, sticky="w")
+        spectrum_holder.grid_propagate(False)
+        spectrum_holder.grid_rowconfigure(0, weight=1)
+        spectrum_holder.grid_columnconfigure(0, weight=1)
+
+        self.frequency_preview_label = tk.Label(
+            spectrum_holder,
+            text="FFT bekleniyor",
+            bg="#050b14",
+            fg=self.MUTED,
+            font=("Arial", 10),
+        )
+        self.frequency_preview_label.grid(
+            row=0,
+            column=0,
+            sticky="nsew",
+        )
+
+        self.frequency_metrics_label = tk.Label(
+            frequency_panel,
+            textvariable=self.frequency_value,
+            bg=self.PANEL,
+            fg=self.ACCENT,
+            justify="left",
+            anchor="nw",
+            wraplength=330,
+            font=("Arial", 10, "bold"),
+        )
+        self.frequency_metrics_label.grid(
+            row=2,
+            column=1,
+            sticky="nsew",
+            padx=(16, 0),
+        )
 
     def _build_controls(self, parent):
         controls_container = tk.Frame(parent, bg=self.BACKGROUND)
@@ -355,7 +445,7 @@ class FaceQualityGui:
 
         self.fft_capture_button = self._button(
             controls,
-            "FFT Örneğini Kaydet (1 Kare)",
+            "Tüm Debug Çıktılarını Kaydet (1 Kare)",
             self.save_current_fft_sample,
             self.ACCENT,
             foreground="#082f49",
@@ -488,6 +578,8 @@ class FaceQualityGui:
             fg=self.MUTED,
             font=("Arial", value_font_size, "bold"),
             justify="left",
+            anchor="w",
+            wraplength=320,
         )
         value_label.pack(anchor="w", pady=(3, 0))
         return value_label
@@ -535,8 +627,8 @@ class FaceQualityGui:
         if selected_mode == self.PRE_CONTROL_MODE:
             self.mode_description.configure(
                 text=(
-                    "Yalnızca sabit yüz kılavuzundaki FFT analizi çalışır. "
-                    "MediaPipe ve model dosyası yüklenmez."
+                    "Sabit yüz kılavuzunda model-free matematiksel "
+                    "PreControl çalışır. MediaPipe ve model dosyası yüklenmez."
                 )
             )
             self.quality_value.set("Bu modda kapalı")
@@ -544,9 +636,12 @@ class FaceQualityGui:
             self.metrics_value.set(
                 "Yüzünü ekrandaki sabit kılavuzun içine yerleştir."
             )
-            self.pre_control_value.set("FFT: Bekleniyor")
+            self.pre_control_value.set("PreControl: Bekleniyor")
             save_state = "disabled"
             fft_capture_state = "normal"
+            self._reset_frequency_display(
+                "FFT için kamerayı başlatın."
+            )
         else:
             self.mode_description.configure(
                 text=(
@@ -560,6 +655,9 @@ class FaceQualityGui:
             self.pre_control_value.set("Bu modda kapalı")
             save_state = "normal"
             fft_capture_state = "disabled"
+            self._reset_frequency_display(
+                "Model analizi modunda FFT kapalı."
+            )
 
         self.quality_label.configure(fg=self.MUTED)
         self.alignment_label.configure(fg=self.MUTED)
@@ -665,6 +763,14 @@ class FaceQualityGui:
 
         self.preview_label.configure(image="", text="Kamera önizlemesi")
         self.preview_photo = None
+        if self.mode_value.get() == self.PRE_CONTROL_MODE:
+            self._reset_frequency_display(
+                "FFT için kamerayı başlatın."
+            )
+        else:
+            self._reset_frequency_display(
+                "Model analizi modunda FFT kapalı."
+            )
         self.connection_value.set("Kamera kapalı")
         self.toggle_button.configure(
             text="Kamerayı Başlat",
@@ -714,6 +820,7 @@ class FaceQualityGui:
         if frame_result.analysis_result is not None:
             self._show_result(frame_result.analysis_result)
         self._show_pre_control_results()
+        self._show_live_frequencies()
         self._schedule_next_frame()
 
     def save_current_fft_sample(self):
@@ -721,16 +828,19 @@ class FaceQualityGui:
             self.mode_value.get() != self.PRE_CONTROL_MODE
             or self.application is None
         ):
-            print("FFT ornegi yalnizca model-free pre-control modunda kaydedilir.")
+            print(
+                "Analiz debug ornegi yalnizca model-free pre-control "
+                "modunda kaydedilir."
+            )
             return False
-        sample_was_saved = self.application.save_fft_sample()
+        sample_was_saved = self.application.save_debug_sample()
         if sample_was_saved:
             self.connection_value.set(
-                "FFT örneği kaydedildi • Canlı analiz çalışıyor"
+                "Analiz debug çıktıları kaydedildi • Canlı analiz çalışıyor"
             )
         else:
             self.connection_value.set(
-                "Kaydedilemedi • Geçerli yüz crop'u ve FFT sonucu yok"
+                "Kaydedilemedi • Geçerli yüz crop'u veya analiz sonucu yok"
             )
         return sample_was_saved
 
@@ -744,6 +854,173 @@ class FaceQualityGui:
 
         self.preview_photo = ImageTk.PhotoImage(image=image)
         self.preview_label.configure(image=self.preview_photo, text="")
+
+    def _show_live_frequencies(self):
+        if (
+            self.mode_value.get() != self.PRE_CONTROL_MODE
+            or self.application is None
+        ):
+            return
+
+        results = getattr(
+            self.application,
+            "latest_pre_control_results",
+            {},
+        )
+        self.frequency_value.set(
+            self._format_live_frequency_metrics(results)
+        )
+
+        visualization = self._create_live_frequency_visualization(
+            results
+        )
+        if visualization is None:
+            self.frequency_photo = None
+            self.frequency_preview_label.configure(
+                image="",
+                text="Geçerli FFT verisi bekleniyor",
+            )
+            return
+
+        if visualization.ndim == 2:
+            rgb_visualization = cv2.cvtColor(
+                visualization,
+                cv2.COLOR_GRAY2RGB,
+            )
+        else:
+            rgb_visualization = cv2.cvtColor(
+                visualization,
+                cv2.COLOR_BGR2RGB,
+            )
+        image = Image.fromarray(rgb_visualization)
+        image.thumbnail((226, 176), Image.Resampling.BILINEAR)
+        self.frequency_photo = ImageTk.PhotoImage(image=image)
+        self.frequency_preview_label.configure(
+            image=self.frequency_photo,
+            text="",
+        )
+
+    def _create_live_frequency_visualization(self, results):
+        context = getattr(self.application, "latest_context", None)
+        log_magnitude = getattr(
+            context,
+            "log_magnitude_visualization",
+            None,
+        )
+        fft_controller = getattr(
+            self.application,
+            "fft_pre_controller",
+            None,
+        )
+        if log_magnitude is None or fft_controller is None:
+            return None
+
+        visualization = fft_controller.create_frequency_band_overlay(
+            log_magnitude
+        )
+        radial_result = results.get("radial_angular")
+        radial_features = getattr(radial_result, "raw_features", {})
+        direction = radial_features.get(
+            "dominant_frequency_angle_degrees"
+        )
+        radial_controller = getattr(
+            self.application,
+            "radial_angular_pre_controller",
+            None,
+        )
+        if direction is not None and radial_controller is not None:
+            visualization = radial_controller.create_direction_overlay(
+                visualization,
+                direction,
+            )
+        return visualization
+
+    def _format_live_frequency_metrics(self, results):
+        fft_result = results.get("fft") if results else None
+        if fft_result is None or not getattr(fft_result, "available", False):
+            return (
+                "FFT verisi bekleniyor\n"
+                "Yüzünüzü kılavuz içinde net ve iyi ışıkta tutun."
+            )
+
+        features = getattr(fft_result, "raw_features", {})
+        lines = [
+            "Düşük bant: "
+            + self._format_frequency_metric(
+                features.get("low_frequency_energy_ratio"),
+                percentage=True,
+            ),
+            "Orta bant: "
+            + self._format_frequency_metric(
+                features.get("middle_frequency_energy_ratio"),
+                percentage=True,
+            ),
+            "Yüksek bant: "
+            + self._format_frequency_metric(
+                features.get("high_frequency_energy_ratio"),
+                percentage=True,
+            ),
+            "Spektral merkez: "
+            + self._format_frequency_metric(
+                features.get("spectral_centroid")
+            ),
+        ]
+
+        radial_result = results.get("radial_angular")
+        if radial_result is not None and getattr(
+            radial_result,
+            "available",
+            False,
+        ):
+            radial_features = getattr(
+                radial_result,
+                "raw_features",
+                {},
+            )
+            lines.extend(
+                [
+                    "Baskın frekans: "
+                    + self._format_frequency_metric(
+                        radial_features.get(
+                            "dominant_radial_frequency"
+                        )
+                    ),
+                    "Baskın yön: "
+                    + self._format_frequency_metric(
+                        radial_features.get(
+                            "dominant_frequency_angle_degrees"
+                        ),
+                        suffix="°",
+                        decimal_places=1,
+                    ),
+                ]
+            )
+        return "\n".join(lines)
+
+    def _format_frequency_metric(
+        self,
+        value,
+        percentage=False,
+        suffix="",
+        decimal_places=3,
+    ):
+        try:
+            numeric_value = float(value)
+        except (TypeError, ValueError):
+            return "--"
+        if not math.isfinite(numeric_value):
+            return "--"
+        if percentage:
+            return "%.1f%%" % (numeric_value * 100.0)
+        return ("%.*f%s" % (decimal_places, numeric_value, suffix))
+
+    def _reset_frequency_display(self, message):
+        self.frequency_photo = None
+        self.frequency_value.set(message)
+        self.frequency_preview_label.configure(
+            image="",
+            text="FFT bekleniyor",
+        )
 
     def _show_result(self, result):
         quality_text, quality_color = self._translate_status(
@@ -795,8 +1072,55 @@ class FaceQualityGui:
             self.pre_control_label.configure(fg=self.MUTED)
             return
 
-        lines = []
-        overall_color = self.SUCCESS
+        combined_result = getattr(
+            self.application,
+            "latest_combined_result",
+            None,
+        )
+        feedback_text, feedback_color = (
+            self._plain_language_fusion_feedback(combined_result)
+        )
+        lines = [feedback_text]
+        if combined_result is not None:
+            score_summary = combined_result.score_summary
+            lines.append(
+                "Kalibrasyon: Bu kamera için mevcut"
+                if combined_result.calibrated
+                else "Kalibrasyon: Bu kamera için yok (deneysel sonuç)"
+            )
+            lines.extend(
+                self._fusion_score_summary_lines(score_summary)
+            )
+            presentation_score = combined_result.raw_features.get(
+                "presentation_artifact_score"
+            )
+            if presentation_score is not None:
+                lines.append(
+                    "Ekran/fotoğraf sunum izi: %d/100"
+                    % round(presentation_score)
+                )
+            presentation_features = combined_result.raw_features.get(
+                "presentation_artifact",
+                {},
+            )
+            presentation_mode = presentation_features.get(
+                "presentation_mode"
+            )
+            presentation_mode_text = {
+                "broadband_display_texture": (
+                    "Çok yöntemli geniş bant ekran dokusu"
+                ),
+                "partial_broadband_texture": (
+                    "Kısmi geniş bant ekran dokusu"
+                ),
+                "supported_clipping": (
+                    "Diğer yöntemlerle doğrulanan parlaklık kırpılması"
+                ),
+            }.get(presentation_mode)
+            if presentation_mode_text is not None:
+                lines.append("Sunum izi kaynağı: " + presentation_mode_text)
+        lines.extend(["", "Teknik analizler:"])
+
         for result_key, result in results.items():
             display_name = getattr(
                 result,
@@ -804,31 +1128,116 @@ class FaceQualityGui:
                 result_key,
             )
             status = getattr(result, "status", "Bilinmiyor")
-            status_text, status_color = self._translate_pre_control_status(
-                status
+            status_text, _status_color = (
+                self._translate_pre_control_status(status)
             )
             score_text = ""
             score = getattr(result, "score", None)
             if score is not None:
-                score_text = " • %d/100" % round(score)
+                score_text = " | %d/100" % round(score)
 
             line = "%s: %s%s" % (
                 display_name,
                 status_text,
                 score_text,
             )
-            if getattr(result, "warning", ""):
-                attack_type = getattr(result, "attack_type", "Bilinmiyor")
-                line += "\nOlası saldırı: " + attack_type
             lines.append(line)
 
-            if status_color == self.ERROR:
-                overall_color = self.ERROR
-            elif status_color == self.WARNING and overall_color != self.ERROR:
-                overall_color = self.WARNING
+        if combined_result is not None:
+            combined_status, _combined_color = (
+                self._translate_pre_control_status(combined_result.status)
+            )
+            combined_score = combined_result.score_summary[
+                "display_score"
+            ]
+            combined_score_text = (
+                "%d/100" % round(combined_score)
+                if combined_score is not None
+                else "--/100"
+            )
+            combined_line = (
+                "Combined Mathematical Risk: "
+                + combined_score_text
+                + " | "
+                + combined_status
+            )
+            lines.append(combined_line)
 
         self.pre_control_value.set("\n".join(lines))
-        self.pre_control_label.configure(fg=overall_color)
+        self.pre_control_label.configure(fg=feedback_color)
+
+    def _fusion_score_summary_lines(self, score_summary):
+        labels = (
+            ("Current frame risk", "current_frame_score"),
+            ("Rolling median", "rolling_median"),
+            ("Temporal percentile", "temporal_percentile"),
+            ("Final temporal decision", "temporal_decision_score"),
+            ("Displayed risk", "display_score"),
+        )
+        return [
+            "%s: %s" % (
+                label,
+                self._format_fusion_score(score_summary.get(key)),
+            )
+            for label, key in labels
+        ]
+
+    def _format_fusion_score(self, value):
+        if value is None:
+            return "N/A"
+        try:
+            return "%.2f" % float(value)
+        except (TypeError, ValueError):
+            return "N/A"
+
+    def _plain_language_fusion_feedback(self, result):
+        if result is None:
+            return (
+                "GENEL SONUÇ: Henüz yeterli ölçüm yok.",
+                self.MUTED,
+            )
+
+        feedback = {
+            "Normal mathematical evidence": (
+                "GENEL SONUÇ: Bu karede belirgin ekran veya basılı "
+                "fotoğraf izi görülmedi; bu sonuç tek başına canlılık "
+                "kanıtı değildir.",
+                self.SUCCESS,
+            ),
+            "Weak anomaly evidence": (
+                "GENEL SONUÇ: Bazı olağandışı izler var. Ekran veya "
+                "basılı fotoğraf saldırısı olabilir; tekrar deneyin.",
+                self.WARNING,
+            ),
+            "Suspicious mathematical evidence": (
+                "UYARI: Ekran gösterimi veya basılı fotoğraf saldırısı "
+                "olabilir. Bu kesin bir karar değildir.",
+                self.ERROR,
+            ),
+            "High mathematical risk": (
+                "UYARI: Güçlü matematiksel bulgular var; ekran gösterimi "
+                "veya basılı fotoğraf saldırısı olabilir. Bu kesin bir "
+                "karar değildir.",
+                self.ERROR,
+            ),
+            "Inconclusive": (
+                "GENEL SONUÇ: Analiz için yeterli güvenilir veri yok. "
+                "Yüzü iyi ışıkta, net ve kılavuz içinde tekrar gösterin.",
+                self.WARNING,
+            ),
+            "Uncalibrated": (
+                "GENEL SONUÇ: Ölçümler henüz kararlı değil. Birkaç saniye "
+                "kameraya bakmaya devam edin.",
+                self.WARNING,
+            ),
+        }
+        return feedback.get(
+            result.status,
+            (
+                "GENEL SONUÇ: Analiz devam ediyor.",
+                self.MUTED,
+            ),
+        )
 
     def _translate_pre_control_status(self, status):
         translations = {
@@ -838,8 +1247,41 @@ class FaceQualityGui:
                 "Olası ekran tekrar saldırısı",
                 self.ERROR,
             ),
+            "Possible Printed Photo": (
+                "Olası basılı fotoğraf saldırısı",
+                self.ERROR,
+            ),
             "Analysis Uncertain": ("Analiz belirsiz", self.WARNING),
             "Unavailable": ("Kullanılamıyor", self.WARNING),
+            "Uncalibrated": ("Kalibre edilmemiş", self.WARNING),
+            "Suspicious frequency distribution": (
+                "Şüpheli frekans dağılımı",
+                self.ERROR,
+            ),
+            "High spectral anomaly": (
+                "Yüksek spektral anomali",
+                self.ERROR,
+            ),
+            "Analysis unavailable": (
+                "Analiz kullanılamıyor",
+                self.WARNING,
+            ),
+            "Normal spectral distribution": (
+                "Normal spektral dağılım",
+                self.SUCCESS,
+            ),
+            "Directional concentration detected": (
+                "Yönsel yoğunlaşma tespit edildi",
+                self.ERROR,
+            ),
+            "Narrow-band spectral anomaly": (
+                "Dar bant spektral anomalisi",
+                self.ERROR,
+            ),
+            "Suspicious radial/angular structure": (
+                "Şüpheli radial/angular yapı",
+                self.ERROR,
+            ),
             "Normal frequency structure": ("Normal", self.SUCCESS),
             "Suspicious frequency pattern": ("Şüpheli", self.ERROR),
             "Possible replay attack": ("Olası ekran saldırısı", self.ERROR),
@@ -848,6 +1290,78 @@ class FaceQualityGui:
                 self.ERROR,
             ),
             "Analysis uncertain": ("Belirsiz", self.WARNING),
+            "No strong block anomaly": (
+                "Güçlü blok anomalisi yok",
+                self.SUCCESS,
+            ),
+            "Compression-like block structure detected": (
+                "Sıkıştırma benzeri blok yapısı tespit edildi",
+                self.WARNING,
+            ),
+            "Local DCT inconsistency": (
+                "Yerel DCT tutarsızlığı",
+                self.WARNING,
+            ),
+            "Suspicious block-frequency evidence": (
+                "Şüpheli blok-frekans bulgusu",
+                self.ERROR,
+            ),
+            "Normal multi-scale texture": (
+                "Normal çok-ölçekli doku",
+                self.SUCCESS,
+            ),
+            "Local detail inconsistency": (
+                "Yerel detay tutarsızlığı",
+                self.WARNING,
+            ),
+            "Directional wavelet anomaly": (
+                "Yönsel wavelet anomalisi",
+                self.WARNING,
+            ),
+            "Suspicious multi-scale texture": (
+                "Şüpheli çok-ölçekli doku",
+                self.ERROR,
+            ),
+            "Normal residual structure": (
+                "Normal residual yapısı",
+                self.SUCCESS,
+            ),
+            "Excessive high-frequency residual": (
+                "Aşırı yüksek frekanslı residual",
+                self.WARNING,
+            ),
+            "Abnormally smooth residual": (
+                "Anormal derecede düzgün residual",
+                self.WARNING,
+            ),
+            "Local residual inconsistency": (
+                "Yerel residual tutarsızlığı",
+                self.WARNING,
+            ),
+            "Suspicious fine-detail evidence": (
+                "Şüpheli ince detay bulgusu",
+                self.ERROR,
+            ),
+            "Normal mathematical evidence": (
+                "Normal matematiksel bulgu",
+                self.SUCCESS,
+            ),
+            "Weak anomaly evidence": (
+                "Zayıf anomali bulgusu",
+                self.WARNING,
+            ),
+            "Suspicious mathematical evidence": (
+                "Şüpheli matematiksel bulgu",
+                self.ERROR,
+            ),
+            "High mathematical risk": (
+                "Yüksek matematiksel risk",
+                self.ERROR,
+            ),
+            "Inconclusive": (
+                "Sonuçlandırılamadı",
+                self.WARNING,
+            ),
         }
         return translations.get(status, (status, self.MUTED))
 

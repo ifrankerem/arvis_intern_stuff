@@ -1,0 +1,33 @@
+MODEL-FREE PRECONTROL MATHEMATICAL REPORT
+===============================================
+Timestamp: 20260723_231724_786770
+Calibration: experimental / uncalibrated
+
+QUALITY
+Blur: 479.753589513997
+Brightness: 70.19763757339452
+Valid: True
+
+MODULE SCORES
+fft: raw=0.0 stabilized=0.0 confidence=0.6 status=Normal frequency structure
+moire: raw=0.0 stabilized=0.0 confidence=1.0 status=Normal
+radial_angular: raw=1.8404568956407887 stabilized=1.3958912018828622 confidence=0.6 status=Normal spectral distribution
+dct_block: raw=2.2843651733128225 stabilized=3.900686157640071 confidence=0.55 status=No strong block anomaly
+wavelet: raw=14.871410839973857 stabilized=7.17054768970871 confidence=0.55 status=Normal multi-scale texture
+residual: raw=22.405014688894155 stabilized=11.896818957345143 confidence=0.55 status=Normal residual structure
+
+GROUP SCORES
+FFT family: 0.4978285045585741 (confidence=0.732)
+Local/transform: 13.077904583452803 (confidence=0.55)
+
+FINAL
+Raw combined score: 6.520099455445588
+Rolling median: 2.9575740524334106
+Status: Normal mathematical evidence
+Consecutive suspicious frames: 0
+Consecutive recovery frames: 101
+
+EVIDENCE
+- Abnormal high-pass residual energy: excessive
+
+This report is supporting mathematical evidence only; it is not an authenticity verdict.

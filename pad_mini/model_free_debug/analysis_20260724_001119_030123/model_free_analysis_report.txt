@@ -1,0 +1,36 @@
+MODEL-FREE PRECONTROL MATHEMATICAL REPORT
+===============================================
+Timestamp: 20260724_001119_030123
+Calibration: experimental / uncalibrated
+
+QUALITY
+Blur: 156.48262628364535
+Brightness: 123.29504453990764
+Valid: True
+
+MODULE SCORES
+fft: raw=0.09338236154831309 stabilized=0.11162434635697696 confidence=0.6 status=Normal frequency structure
+moire: raw=0.0 stabilized=0.0 confidence=1.0 status=Normal
+radial_angular: raw=17.211440258609365 stabilized=17.26330754524719 confidence=0.6 status=Normal spectral distribution
+dct_block: raw=4.0 stabilized=4.0 confidence=0.55 status=No strong block anomaly
+wavelet: raw=6.5931524148356235 stabilized=7.029997402999621 confidence=0.55 status=Normal multi-scale texture
+residual: raw=4.169399865429384 stabilized=3.3812104363932542 confidence=0.55 status=Normal residual structure
+
+GROUP SCORES
+FFT family: 4.681578105137309 (confidence=0.732)
+Local/transform: 4.911642252487453 (confidence=0.55)
+
+FINAL
+Raw combined score: 67.34473590731561
+Rolling median: 66.82792117803622
+Status: Suspicious mathematical evidence
+Consecutive suspicious frames: 4
+Consecutive recovery frames: 0
+
+EVIDENCE
+- Repeated parallel bands outside the face support a physical display-frame presentation artifact
+
+WARNINGS
+- WARNING: Mathematical image evidence is consistent with a possible replay or print attack.
+
+This report is supporting mathematical evidence only; it is not an authenticity verdict.

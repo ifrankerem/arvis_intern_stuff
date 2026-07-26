@@ -1,0 +1,36 @@
+MODEL-FREE PRECONTROL MATHEMATICAL REPORT
+===============================================
+Timestamp: 20260723_233442_899507
+Calibration: experimental / uncalibrated
+
+QUALITY
+Blur: 414.41048016621534
+Brightness: 60.62760726670462
+Valid: True
+
+MODULE SCORES
+fft: raw=0.0 stabilized=0.0 confidence=0.6 status=Normal frequency structure
+moire: raw=0.0 stabilized=0.0 confidence=1.0 status=Normal
+radial_angular: raw=0.6697445799072457 stabilized=0.25019520175299226 confidence=0.6 status=Normal spectral distribution
+dct_block: raw=4.0 stabilized=4.0 confidence=0.55 status=No strong block anomaly
+wavelet: raw=9.643100529426755 stabilized=2.333685476361786 confidence=0.55 status=Normal multi-scale texture
+residual: raw=0.7049476902140742 stabilized=0.5528616499981837 confidence=0.1925 status=Analysis uncertain
+
+GROUP SCORES
+FFT family: 0.1811604191552386 (confidence=0.732)
+Local/transform: 6.779437574195267 (confidence=0.55)
+
+FINAL
+Raw combined score: 48.5432234984617
+Rolling median: 55.24785638553928
+Status: Suspicious mathematical evidence
+Consecutive suspicious frames: 0
+Consecutive recovery frames: 0
+
+EVIDENCE
+- No included module crossed its evidence threshold
+
+WARNINGS
+- WARNING: Mathematical image evidence is consistent with a possible replay or print attack.
+
+This report is supporting mathematical evidence only; it is not an authenticity verdict.

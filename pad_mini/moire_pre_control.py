@@ -1,8 +1,7 @@
-"""Mevcut FFT spektrumundan Moire/periyodik desen suphe sinyali uretir.
+"""Ortak FFT context'inden Moire/periyodik desen suphe sinyali uretir.
 
-Bu modul FFT hesaplamaz. ``GlobalFFTPreController`` tarafindan uretilmis,
-merkezi zaten ``fftshift`` ile kaydirilmis sayisal guc ve log spektrumlarini
-kullanir. Sonuc kesin bir canlilik veya fake karari degildir.
+Bu modul FFT hesaplamaz. ``ModelFreePreControlContext`` icindeki merkezi zaten
+kaydirilmis sayisal power ve analitik log-power spektrumlarini kullanir.
 """
 
 from collections import deque
@@ -12,45 +11,7 @@ import cv2
 import numpy as np
 
 import config
-
-
-class MoireAnalysisResult:
-    """UI ve PreControl koleksiyonu icin aciklanabilir Moire sonucu."""
-
-    display_name = "Moiré"
-
-    def __init__(
-        self,
-        available,
-        score,
-        periodic_peak_score,
-        symmetric_peak_score,
-        directional_concentration_score,
-        status,
-        possible_attack,
-        evidence,
-        warning,
-        quality_status,
-        metrics=None,
-    ):
-        self.available = available
-        self.moire_available = available
-        self.score = score
-        self.moire_score = score
-        self.periodic_peak_score = periodic_peak_score
-        self.symmetric_peak_score = symmetric_peak_score
-        self.directional_concentration_score = (
-            directional_concentration_score
-        )
-        self.status = status
-        self.moire_status = status
-        self.possible_attack = possible_attack
-        self.attack_type = possible_attack
-        self.evidence = evidence
-        self.warning = warning
-        self.quality_status = quality_status
-        self.passed = available and status == "Normal"
-        self.metrics = metrics or {}
+from model_free_analysis import ModelFreeAnalysisResult
 
 
 class MoirePeriodicPatternPreController:
@@ -63,6 +24,8 @@ class MoirePeriodicPatternPreController:
     Hann pencereli ROI'den geldigi icin crop kenarlari zaten bastirilmistir.
     """
 
+    MODULE_NAME = "Moiré"
+
     def __init__(self):
         self.score_history = deque(
             maxlen=config.EXPERIMENTAL_MOIRE_HISTORY_SIZE
@@ -72,18 +35,26 @@ class MoirePeriodicPatternPreController:
         self.invalid_streak = 0
         self.warning_is_active = False
         self.previous_region = None
+        self.latest_candidate_peaks = []
+        self.latest_metrics = None
 
-    def analyze(
-        self,
-        power_spectrum,
-        log_spectrum,
-        face_box=None,
-        unavailable_reason="FFT spectrum unavailable",
-    ):
+    def analyze(self, context):
+        face_box = context.face_bounding_box
         self._handle_region_change(face_box)
 
+        if not context.face_quality_valid:
+            return self.register_unavailable(
+                context.quality_reason or "face quality gate failed",
+                face_box,
+            )
+
+        power_spectrum = context.power_spectrum
+        log_spectrum = context.log_power_spectrum
         if power_spectrum is None or log_spectrum is None:
-            return self.register_unavailable(unavailable_reason, face_box)
+            return self.register_unavailable(
+                "shared FFT spectrum unavailable",
+                face_box,
+            )
 
         if not self._spectrum_is_valid(power_spectrum, log_spectrum):
             return self.register_unavailable(
@@ -111,22 +82,77 @@ class MoirePeriodicPatternPreController:
         ):
             self._reset_temporal_state()
 
-        return MoireAnalysisResult(
-            False,
-            None,
-            0.0,
-            0.0,
-            0.0,
-            "Unavailable",
-            "none",
-            [reason],
-            "",
+        self.latest_candidate_peaks = []
+        self.latest_metrics = None
+
+        return ModelFreeAnalysisResult.unavailable(
+            self.MODULE_NAME,
             reason,
+            debug_data={
+                "possible_attack": "none",
+                "quality_status": reason,
+            },
+            calibrated=False,
         )
 
     def reset(self):
         self._reset_temporal_state()
         self.previous_region = None
+        self.latest_candidate_peaks = []
+        self.latest_metrics = None
+
+    def create_debug_visualization(self, log_magnitude_visualization):
+        """Draw only the periodic-peak candidates measured by this module."""
+        if log_magnitude_visualization is None:
+            return None
+        visualization = cv2.cvtColor(
+            log_magnitude_visualization.copy(),
+            cv2.COLOR_GRAY2BGR,
+        )
+        height, width = visualization.shape[:2]
+        cv2.drawMarker(
+            visualization,
+            (width // 2, height // 2),
+            (0, 255, 255),
+            cv2.MARKER_CROSS,
+            12,
+            1,
+        )
+        for candidate in self.latest_candidate_peaks:
+            cv2.circle(
+                visualization,
+                (int(candidate["x"]), int(candidate["y"])),
+                4,
+                (0, 0, 255),
+                1,
+                cv2.LINE_AA,
+            )
+        metrics = self.latest_metrics or {}
+        label = "Peaks: %d  Symmetric pairs: %d" % (
+            int(metrics.get("candidate_peak_count", 0)),
+            int(metrics.get("symmetric_pair_count", 0)),
+        )
+        cv2.putText(
+            visualization,
+            label,
+            (7, 18),
+            cv2.FONT_HERSHEY_SIMPLEX,
+            0.42,
+            (0, 0, 0),
+            2,
+            cv2.LINE_AA,
+        )
+        cv2.putText(
+            visualization,
+            label,
+            (7, 18),
+            cv2.FONT_HERSHEY_SIMPLEX,
+            0.42,
+            (255, 255, 255),
+            1,
+            cv2.LINE_AA,
+        )
+        return visualization
 
     def _calculate_metrics(self, power_spectrum, log_spectrum):
         height, width = power_spectrum.shape
@@ -183,6 +209,7 @@ class MoirePeriodicPatternPreController:
             power_spectrum,
             total_band_energy,
         )
+        self.latest_candidate_peaks = [dict(candidate) for candidate in candidates]
         periodic_score, peak_energy_share = self._periodic_peak_score(
             candidates
         )
@@ -207,7 +234,7 @@ class MoirePeriodicPatternPreController:
             * direction_evidence
         )
 
-        return {
+        metrics = {
             "raw_moire_score": float(np.clip(raw_moire_score, 0.0, 100.0)),
             "periodic_peak_score": periodic_score,
             "symmetric_peak_score": symmetry_score,
@@ -218,6 +245,8 @@ class MoirePeriodicPatternPreController:
             "dominant_direction": dominant_direction,
             "dominant_direction_share": dominant_direction_share,
         }
+        self.latest_metrics = dict(metrics)
+        return metrics
 
     def _select_candidates(
         self,
@@ -291,7 +320,9 @@ class MoirePeriodicPatternPreController:
         if not candidates:
             return 0.0, 0.0
 
-        strongest = candidates[:8]
+        strongest = candidates[
+            : config.EXPERIMENTAL_MOIRE_TARGET_PEAK_COUNT
+        ]
         mean_peak_z = float(
             np.mean([candidate["z"] for candidate in strongest])
         )
@@ -314,11 +345,16 @@ class MoirePeriodicPatternPreController:
             config.EXPERIMENTAL_MOIRE_ENERGY_CONCENTRATION_FULL,
         )
         score = (
-            0.55 * prominence_score
-            + 0.20 * count_score
-            + 0.25 * energy_score
+            config.EXPERIMENTAL_MOIRE_PROMINENCE_WEIGHT
+            * prominence_score
+            + config.EXPERIMENTAL_MOIRE_PEAK_COUNT_WEIGHT * count_score
+            + config.EXPERIMENTAL_MOIRE_PEAK_ENERGY_WEIGHT * energy_score
         )
-        score *= min(1.0, len(candidates) / 2.0)
+        score *= min(
+            1.0,
+            len(candidates)
+            / config.EXPERIMENTAL_MOIRE_MINIMUM_PERIODIC_PEAK_COUNT,
+        )
         return float(np.clip(score, 0.0, 1.0)), peak_energy_share
 
     def _symmetry_score(self, candidates, width, height):
@@ -369,7 +405,14 @@ class MoirePeriodicPatternPreController:
                 continue
 
             distance_score = 1.0 - min(1.0, best_distance / tolerance)
-            match_scores.append(amplitude_ratio * (0.7 + 0.3 * distance_score))
+            match_scores.append(
+                amplitude_ratio
+                * (
+                    config.EXPERIMENTAL_MOIRE_SYMMETRY_AMPLITUDE_WEIGHT
+                    + config.EXPERIMENTAL_MOIRE_SYMMETRY_DISTANCE_WEIGHT
+                    * distance_score
+                )
+            )
 
         if not match_scores:
             return 0.0, 0
@@ -476,8 +519,10 @@ class MoirePeriodicPatternPreController:
             if (
                 stable_score
                 >= config.EXPERIMENTAL_MOIRE_SCREEN_REPLAY_SCORE
-                and metrics["symmetric_peak_score"] >= 0.45
-                and metrics["directional_concentration_score"] >= 0.35
+                and metrics["symmetric_peak_score"]
+                >= config.EXPERIMENTAL_MOIRE_SCREEN_REPLAY_SYMMETRY_SCORE
+                and metrics["directional_concentration_score"]
+                >= config.EXPERIMENTAL_MOIRE_SCREEN_REPLAY_DIRECTION_SCORE
             ):
                 status = "Possible Screen Replay"
                 possible_attack = "screen_replay"
@@ -494,35 +539,47 @@ class MoirePeriodicPatternPreController:
         else:
             status = "Normal"
 
-        metrics = dict(metrics)
-        metrics["stable_moire_score"] = stable_score
-        metrics["history_length"] = len(self.score_history)
-        return MoireAnalysisResult(
-            True,
-            stable_score,
-            metrics["periodic_peak_score"],
-            metrics["symmetric_peak_score"],
-            metrics["directional_concentration_score"],
-            status,
-            possible_attack,
-            evidence,
-            warning,
-            "Sufficient",
-            metrics,
+        confidence = min(
+            1.0,
+            len(self.score_history)
+            / config.EXPERIMENTAL_MOIRE_MINIMUM_HISTORY,
+        )
+        return ModelFreeAnalysisResult(
+            module_name=self.MODULE_NAME,
+            available=True,
+            raw_features=dict(metrics),
+            raw_score=raw_score,
+            stabilized_score=stable_score,
+            confidence=confidence,
+            status=status,
+            evidence=evidence,
+            warnings=[warning] if warning else [],
+            debug_data={
+                "possible_attack": possible_attack,
+                "quality_status": "Sufficient",
+                "history_length": len(self.score_history),
+            },
+            calibrated=False,
         )
 
     def _create_evidence(self, metrics):
         evidence = []
-        if metrics["periodic_peak_score"] >= 0.55:
+        if metrics["periodic_peak_score"] >= (
+            config.EXPERIMENTAL_MOIRE_PERIODIC_EVIDENCE_SCORE
+        ):
             evidence.append("Strong periodic peaks detected")
         if (
-            metrics["periodic_peak_score"] >= 0.45
-            and metrics["symmetric_peak_score"] >= 0.55
+            metrics["periodic_peak_score"]
+            >= config.EXPERIMENTAL_MOIRE_SUPPORTING_PERIODIC_SCORE
+            and metrics["symmetric_peak_score"]
+            >= config.EXPERIMENTAL_MOIRE_SYMMETRY_EVIDENCE_SCORE
         ):
             evidence.append("Symmetric frequency peaks found")
         if (
-            metrics["periodic_peak_score"] >= 0.45
-            and metrics["directional_concentration_score"] >= 0.50
+            metrics["periodic_peak_score"]
+            >= config.EXPERIMENTAL_MOIRE_SUPPORTING_PERIODIC_SCORE
+            and metrics["directional_concentration_score"]
+            >= config.EXPERIMENTAL_MOIRE_DIRECTION_EVIDENCE_SCORE
         ):
             evidence.append(
                 "Energy concentrated in a narrow %s frequency direction"

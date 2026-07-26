@@ -2,3 +2,5 @@ mediapipe==0.10.35
 numpy==2.5.1
 opencv-contrib-python==4.13.0.92
 Pillow==12.3.0
+# Optional at runtime: Module 5 reports unavailable when this is absent.
+PyWavelets>=1.6.0

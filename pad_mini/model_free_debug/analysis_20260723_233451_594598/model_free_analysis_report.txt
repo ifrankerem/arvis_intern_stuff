@@ -1,0 +1,33 @@
+MODEL-FREE PRECONTROL MATHEMATICAL REPORT
+===============================================
+Timestamp: 20260723_233451_594598
+Calibration: experimental / uncalibrated
+
+QUALITY
+Blur: 325.530251573641
+Brightness: 65.23916981522696
+Valid: True
+
+MODULE SCORES
+fft: raw=0.0 stabilized=0.0 confidence=0.6 status=Normal frequency structure
+moire: raw=0.0 stabilized=0.0 confidence=1.0 status=Normal
+radial_angular: raw=0.6048662418073991 stabilized=0.44862657673422546 confidence=0.6 status=Normal spectral distribution
+dct_block: raw=4.664291664945868 stabilized=4.0 confidence=0.55 status=No strong block anomaly
+wavelet: raw=15.980353990011896 stabilized=15.281832541274008 confidence=0.55 status=Normal multi-scale texture
+residual: raw=16.83953830832233 stabilized=13.614716471995173 confidence=0.1925 status=Analysis uncertain
+
+GROUP SCORES
+FFT family: 0.16361136048888666 (confidence=0.732)
+Local/transform: 10.237874601172418 (confidence=0.55)
+
+FINAL
+Raw combined score: 40.05735810167564
+Rolling median: 44.42183235165044
+Status: Weak anomaly evidence
+Consecutive suspicious frames: 0
+Consecutive recovery frames: 1
+
+EVIDENCE
+- No included module crossed its evidence threshold
+
+This report is supporting mathematical evidence only; it is not an authenticity verdict.

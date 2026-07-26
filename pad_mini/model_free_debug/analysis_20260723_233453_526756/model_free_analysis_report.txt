@@ -1,0 +1,33 @@
+MODEL-FREE PRECONTROL MATHEMATICAL REPORT
+===============================================
+Timestamp: 20260723_233453_526756
+Calibration: experimental / uncalibrated
+
+QUALITY
+Blur: 507.6384291065015
+Brightness: 58.853757281944226
+Valid: True
+
+MODULE SCORES
+fft: raw=0.0 stabilized=0.0 confidence=0.6 status=Normal frequency structure
+moire: raw=0.0 stabilized=0.0 confidence=1.0 status=Normal
+radial_angular: raw=1.2015114653542354 stabilized=1.9627935986255893 confidence=0.6 status=Normal spectral distribution
+dct_block: raw=4.0 stabilized=4.0 confidence=0.55 status=No strong block anomaly
+wavelet: raw=17.87398669199503 stabilized=14.792717418656427 confidence=0.55 status=Normal multi-scale texture
+residual: raw=21.893727776239267 stabilized=11.894117791684344 confidence=0.1925 status=Analysis uncertain
+
+GROUP SCORES
+FFT family: 0.32499900292368666 (confidence=0.732)
+Local/transform: 10.83345613187815 (confidence=0.55)
+
+FINAL
+Raw combined score: 66.52661945393879
+Rolling median: 48.96537934047504
+Status: Weak anomaly evidence
+Consecutive suspicious frames: 5
+Consecutive recovery frames: 0
+
+EVIDENCE
+- Broadband display texture is repeated across FFT, DCT and fine-detail transforms
+
+This report is supporting mathematical evidence only; it is not an authenticity verdict.
