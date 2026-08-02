@@ -1,0 +1,715 @@
+<!doctype html>
+<html lang="tr">
+<head>
+  <meta charset="utf-8">
+  <title>Grup 1 - Yüz ROI Takibi ve Zamansal Moiré Entegrasyon Rehberi</title>
+  <style>
+    @page {
+      size: A4;
+      margin: 18mm 17mm 18mm 17mm;
+    }
+    * { box-sizing: border-box; }
+    body {
+      margin: 0;
+      color: #172033;
+      font-family: "Noto Sans", "DejaVu Sans", Arial, sans-serif;
+      font-size: 10.2pt;
+      line-height: 1.46;
+    }
+    h1, h2, h3, h4 { color: #10365f; page-break-after: avoid; }
+    h1 { font-size: 25pt; line-height: 1.13; margin: 0 0 12mm; }
+    h2 {
+      font-size: 16.5pt;
+      margin: 10mm 0 4mm;
+      padding-bottom: 2mm;
+      border-bottom: 1.5px solid #5cb8b2;
+    }
+    h3 { font-size: 12.5pt; margin: 7mm 0 2mm; }
+    h4 { font-size: 10.5pt; margin: 5mm 0 1mm; }
+    p { margin: 0 0 3mm; }
+    ul, ol { margin: 2mm 0 4mm 6mm; padding-left: 5mm; }
+    li { margin: 1.2mm 0; }
+    code, pre {
+      font-family: "Noto Sans Mono", "DejaVu Sans Mono", monospace;
+    }
+    code {
+      background: #edf4f7;
+      color: #163b5c;
+      padding: 0.2mm 1mm;
+      border-radius: 1mm;
+    }
+    pre {
+      white-space: pre-wrap;
+      background: #0f2438;
+      color: #f5fbff;
+      padding: 4mm;
+      border-radius: 2mm;
+      font-size: 8.6pt;
+      line-height: 1.42;
+      page-break-inside: avoid;
+    }
+    table {
+      width: 100%;
+      border-collapse: collapse;
+      margin: 3mm 0 6mm;
+      font-size: 9pt;
+      page-break-inside: auto;
+    }
+    tr { page-break-inside: avoid; }
+    th {
+      background: #163b5c;
+      color: white;
+      text-align: left;
+      padding: 2.5mm;
+      border: 1px solid #163b5c;
+    }
+    td {
+      vertical-align: top;
+      padding: 2.4mm;
+      border: 1px solid #bccbd5;
+    }
+    tr:nth-child(even) td { background: #f4f8fa; }
+    .cover {
+      min-height: 215mm;
+      padding: 15mm 10mm 0;
+      page-break-after: always;
+    }
+    .eyebrow {
+      color: #16837d;
+      font-size: 11pt;
+      font-weight: 700;
+      letter-spaçıng: 0.8px;
+      text-transform: uppercase;
+      margin-bottom: 6mm;
+    }
+    .subtitle {
+      font-size: 14pt;
+      line-height: 1.5;
+      color: #536478;
+      max-width: 150mm;
+      margin-bottom: 11mm;
+    }
+    .cover-card {
+      background: #edf7f6;
+      border-left: 5px solid #35a9a1;
+      padding: 6mm;
+      margin-top: 10mm;
+    }
+    .meta {
+      margin-top: 14mm;
+      color: #667386;
+      font-size: 9.5pt;
+    }
+    .callout {
+      background: #edf7f6;
+      border-left: 4px solid #35a9a1;
+      padding: 4mm 5mm;
+      margin: 4mm 0 5mm;
+      page-break-inside: avoid;
+    }
+    .warning {
+      background: #fff5e7;
+      border-left-color: #e9962c;
+    }
+    .critical {
+      background: #fff0f0;
+      border-left-color: #d95858;
+    }
+    .small { color: #657488; font-size: 8.8pt; }
+    .tag {
+      display: inline-block;
+      background: #d9efed;
+      color: #115e5a;
+      border-radius: 4mm;
+      padding: 0.7mm 2.2mm;
+      margin-right: 1mm;
+      font-size: 8.5pt;
+      font-weight: 700;
+    }
+    .flow {
+      margin: 5mm 0 7mm;
+      text-align: center;
+      page-break-inside: avoid;
+    }
+    .flow-box {
+      display: inline-block;
+      width: 83%;
+      background: #f2f7fa;
+      border: 1.4px solid #7ea4bc;
+      border-radius: 2mm;
+      padding: 2.8mm;
+      font-weight: 700;
+    }
+    .flow-arrow { color: #16837d; font-size: 15pt; line-height: 1.2; }
+    .page-break { page-break-before: always; }
+    .checklist li { list-style-type: "\2610  "; padding-left: 1mm; }
+    .decision { font-weight: 700; color: #0b6762; }
+  </style>
+</head>
+<body>
+  <section class="cover">
+    <div class="eyebrow">Teknik devir ve uygulama dokümanı</div>
+    <h1>Grup 1 Fraud Detection ve Deepfake Projesi</h1>
+    <div class="subtitle">
+      Yüz ROI tespiti/takibi, kalıcı analiz oturumu ve zamansal Moiré karar
+      mekanizmasının mevcut deterministik pipeline'a entegrasyon gereksinimleri
+    </div>
+    <div>
+      <span class="tag">FastAPI</span>
+      <span class="tag">MediaPipe</span>
+      <span class="tag">OpenCV</span>
+      <span class="tag">Deterministik PAD</span>
+      <span class="tag">Temporal Moiré</span>
+    </div>
+    <div class="cover-card">
+      <strong>Ana sonuç:</strong> Matematiksel yöntemler projeye taşınmış durumda.
+      Eksik olan parça, tam kamera karesini yüz ROI'sine dönüştüren ve kareler
+      arasındaki durumu koruyan uzun ömürlü bir <code>AnalysisSession</code>
+      katmanıdır. Sadece <code>dummy.py</code> içine <code>deque</code> eklemek
+      yeterli değildir; mevcut pipeline her çağrıda yöntem nesnelerini yeniden
+      oluşturduğu için hafıza bir sonraki karede kaybolur.
+    </div>
+    <div class="meta">
+      <p><strong>İncelenen dal:</strong> <code>feature/deterministic</code></p>
+      <p><strong>İncelenen commit:</strong> <code>4bc36fe</code></p>
+      <p><strong>Hazırlanma tarihi:</strong> 31 Temmuz 2026</p>
+      <p><strong>Belge amacı:</strong> Uygulamayı ve akış katmanını geliştirecek ekip arkadaşına teknik gereksinimleri eksiksiz aktarmak</p>
+    </div>
+  </section>
+
+  <h2>1. Yönetici özeti</h2>
+  <p>
+    <code>app/deterministic/dummy.py</code> içinde altı deterministik görüntü
+    yöntemi bulunuyor: Global FFT, Moiré, Radial/Angular Spectrum, DCT/Block,
+    Wavelet ve High-Pass Residual. Bu yöntemler tek bir görüntüyü analiz edip
+    <code>0.0-1.0</code> aralığında şüphe skoru üretiyor.
+  </p>
+  <p>
+    Ancak dosya yüz tespiti yapmıyor. Kendisine verilen görüntünün zaten seçilmiş
+    yüz/analiz ROI'si olduğunu varsayıyor. Ayrıca mevcut <code>run_all()</code>
+    her karede yöntemleri yeniden keşfedip yeniden oluşturuyor. Bu nedenle yüz
+    takibi, Moiré skor geçmışi ve uyarı durumu korunamıyor.
+  </p>
+  <div class="callout">
+    <strong>Uygulanacak temel çözüm:</strong> Her kamera/video akışı için ayrı,
+    uzun ömürlü bir <code>AnalysisSession</code> oluşturulmalı. Detector, tracker,
+    yöntem nesneleri ve temporal Moiré durumu bu session içinde saklanmalı.
+  </div>
+
+  <h3>Başarı için zorunlu dört değişiklik</h3>
+  <ol>
+    <li>Tam karede MediaPipe ile yüz bulunmalı ve karar yöntemlerine yalnızca takip edilen yüz ROI'si verilmelidir.</li>
+    <li>Pipeline, her karede nesne oluşturan stateless yapı yerine session bazlı ve stateful hale getirilmelidir.</li>
+    <li>Tek karelik Moiré skoru, session içindeki kayan pencere ve histerezis kurallarıyla stabilize edilmelidir.</li>
+    <li>Geçersiz/yetersiz veri, <code>score=0</code> ile "risk yok" gibi gösterilmemeli; <code>available</code>, <code>reliability</code> ve neden kodları açık olmalıdır.</li>
+  </ol>
+
+  <h2>2. Mevcut sistemin durumu</h2>
+  <table>
+    <thead><tr><th>Bileşen</th><th>Bugünkü durum</th><th>Entegrasyona etkisi</th></tr></thead>
+    <tbody>
+      <tr><td><code>app/deterministic/dummy.py</code></td><td>Altı matematiksel yöntem tam olarak mevcut.</td><td>Tek karelik ham analiz çekirdeği olarak korunabilir.</td></tr>
+      <tr><td><code>app/pipeline.py</code></td><td>Her <code>run_all()</code> çağrısı dosyaları tarar, modülleri import eder ve yeni yöntem nesneleri oluşturur.</td><td>Temporal hafıza ve takip durumu her karede kaybolur; değiştirilmesi zorunludur.</td></tr>
+      <tr><td><code>contracts/media.py</code></td><td><code>IMAGE</code>, <code>VIDEO_FRAME</code>, <code>CAMERA_FRAME</code>, <code>frame_index</code> ve <code>timestamp_ms</code> alanları var.</td><td>Session ve takip için iyi bir temel; <code>session_id</code> API seviyesinde eklenmelidir.</td></tr>
+      <tr><td><code>contracts/deterministic_method.py</code></td><td>Sonuç yalnızca <code>method_name</code>, <code>score</code> ve <code>details</code> tasiyor.</td><td>Unavailable ve temporal durumlar için sozlesme yetersiz.</td></tr>
+      <tr><td><code>app/backend/main.py</code></td><td>Yalnızca <code>/health</code> endpoint'i var.</td><td>Frame/session endpoint'leri ve lifecycle yönetimi eklenmeli.</td></tr>
+      <tr><td><code>requirements.txt</code></td><td>FastAPI ve Uvicorn var; NumPy, OpenCV, MediaPipe ve multipart yükleme desteği kayıtlı değil.</td><td>Temiz ortamda deterministik dosya ve detector çalışmaz.</td></tr>
+      <tr><td>Testler</td><td>Repository'de test paketi yok.</td><td>Takip, temporal durum ve session izolasyonu için testler zorunlu.</td></tr>
+    </tbody>
+  </table>
+
+  <h3>Mevcut <code>dummy.py</code> ne yapiyor?</h3>
+  <ul>
+    <li>Girdinin tamamini seçilmiş yüz ROI'si kabul eder.</li>
+    <li>Görüntüyu griye çevirir ve <code>256x256</code> boyutuna getirir.</li>
+    <li>Boyut, parlaklık, bulanıklık ve yoğunluk değişimi kalite kontrolleri yapar.</li>
+    <li>Her yöntem bağımsız bir <code>DeterministicMethodResult</code> döndürur.</li>
+    <li>Yüz detector'u, kareler arası takip, final fusion veya temporal durum icermez.</li>
+  </ul>
+
+  <div class="callout warning">
+    <strong>Önemli:</strong> Kalite geçersiz olduğunda bazı yöntemler dışarıya
+    <code>score=0.0</code> döndürup <code>details.available=False</code> yazıyor.
+    Tüketici <code>details</code> alanıni kontrol etmezse yetersiz veri yanlışlikla
+    "şüphe yok" olarak yorumlanabilir.
+  </div>
+
+  <h2>3. Hedef mimari</h2>
+  <div class="flow">
+    <div class="flow-box">İştemci: tam BGR kamera/video karesi + session_id + frame_index + timestamp_ms</div>
+    <div class="flow-arrow">&#8595;</div>
+    <div class="flow-box">SessionManager: doğru AnalysisSession'i bulur ve aynı session içindeki kareleri sıralar</div>
+    <div class="flow-arrow">&#8595;</div>
+    <div class="flow-box">MediaPipe FaceLandmarker (ROI-only): yüz kutusu ve landmark altyapısı</div>
+    <div class="flow-arrow">&#8595;</div>
+    <div class="flow-box">StableFaceROITracker: kutu yumuşatma, kısa kayıp hold, çoklu yüz ve reset kuralları</div>
+    <div class="flow-arrow">&#8595;</div>
+    <div class="flow-box">ROI Builder: yüz crop'u + kalite + provenance/metadata</div>
+    <div class="flow-arrow">&#8595;</div>
+    <div class="flow-box">Kalici deterministik yöntemler: FFT, Moiré, Radial, DCT, Wavelet, Residual</div>
+    <div class="flow-arrow">&#8595;</div>
+    <div class="flow-box">TemporalMoiréState: deque, median, streak ve histerezis</div>
+    <div class="flow-arrow">&#8595;</div>
+    <div class="flow-box">API sonuçu: tracking + quality + method results + temporal Moiré</div>
+  </div>
+
+  <h3>Temel sınıflar ve sorumluluklari</h3>
+  <table>
+    <thead><tr><th>Sınıf</th><th>Sorumluluk</th><th>Durum sahibi mı?</th></tr></thead>
+    <tbody>
+      <tr><td><code>SessionManager</code></td><td><code>session_id</code> ile session oluşturma, bulma, timeout ve kapatma.</td><td>Evet, session haritasi.</td></tr>
+      <tr><td><code>AnalysisSession</code></td><td>Bir kamera/video akışı için detector, tracker, yöntemler ve temporal durumun ömrü.</td><td>Evet.</td></tr>
+      <tr><td><code>MediaPipeFaceDetector</code></td><td>Tam kareden yüz/landmark kutusu çıkarmak; liveness oyu vermemek.</td><td>VIDEO modunda evet.</td></tr>
+      <tr><td><code>StableFaceROITracker</code></td><td>Kutuyu EMA ile yumuşatmak, kısa tespit kaybıni tutmak, çoklu yüzde resetlemek.</td><td>Evet.</td></tr>
+      <tr><td><code>DeterministicMethod</code> sınıfları</td><td>Tek yüz ROI'sinden ham matematiksel ölçüm ve skor çıkarmak.</td><td>Tercihen hayir; geçici veriler lokal olmali.</td></tr>
+      <tr><td><code>TemporalMoiréState</code></td><td>Moiré raw skorlarini kareler boyunca stabilize etmek.</td><td>Evet, session bazlı.</td></tr>
+    </tbody>
+  </table>
+
+  <h2>4. Önerilen dosya yapısı</h2>
+  <pre>contracts/
+  media.py                         # mevcut; frame/timestamp korunur
+  deterministic_method.py          # sonuç sozlesmesi genisletilir
+  face_roi.py                      # FaceBox ve FaceROITrackingResult
+
+app/
+  config.py                        # detector/tracker/temporal eşikleri
+  pipeline.py                      # her karede discovery yerine kalıcı runner
+  analysis_session.py              # tek akışın state sahibi
+  session_manager.py               # session_id -> AnalysisSession
+  roi/
+    mediapipe_detector.py           # ROI-only FaceLandmarker adaptörü
+    face_tracker.py                 # stabil kutu takibi
+  temporal/
+    moire_state.py                  # deque ve histerezis
+  deterministic/
+    dummy.py                        # mevcut altı tek-kare yöntemi
+  backend/
+    main.py                         # session/frame endpoint'leri
+
+models/
+  face_landmarker.task             # deploy edilen model asset'i
+
+tests/
+  test_face_tracker.py
+  test_moire_temporal.py
+  test_analysis_session.py
+  test_session_isolation.py
+  test_api_frames.py</pre>
+
+  <div class="callout">
+    <strong>Kopyalanması gereken çekirdek:</strong> Mevcut PAD Mini projesindeki
+    ROI-only <code>FaceLandmarker</code>, <code>FaceBox</code> ve
+    <code>StableFaceROITracker</code> mantigi taşınabilir. GUI sınıfları ve
+    sunucuya ait olmayan kamera penceresi kodları taşınmamalıdır.
+  </div>
+
+  <h2>5. Yüz tespiti ve takip gereksinimleri</h2>
+  <h3>5.1 Detector kuralları</h3>
+  <ul>
+    <li>Detector tam BGR kareyi alır; MediaPipe için RGB'ye çevirir.</li>
+    <li><code>FaceLandmarker</code> VIDEO modunda ve <code>roi_only=True</code> çalışmalidir.</li>
+    <li>Blendshape ve transformation matrix üretilmemelidir; bu entegrasyonda gerekli değildir.</li>
+    <li>Detector sonuçu yalnızca ROI altyapısıdir. Detector confidence değeri PAD/liveness skoruna eklenmemelidir.</li>
+    <li>MediaPipe VIDEO timestamp'leri aynı session içinde kesinlikle artan olmalıdır.</li>
+    <li><code>Media.timestamp_ms</code> varsa kullanılmali; yoksa session içinde monotonic zaman üretilmelidir.</li>
+  </ul>
+
+  <h3>5.2 Tracker davranışi</h3>
+  <table>
+    <thead><tr><th>Durum</th><th>Beklenen davranış</th></tr></thead>
+    <tbody>
+      <tr><td><code>DETECTED</code></td><td>Tek yüz bulundu. Genişletilmiş ve yumuşatılmış ROI analiz edilir.</td></tr>
+      <tr><td><code>HELD</code></td><td>Yüz kısa süre kayboldu. Son ROI en fazla 0,8 saniye tutulur; reliability zamanla azalır.</td></tr>
+      <tr><td><code>NO_FACE</code></td><td>Analiz için ROI yoktur. Sabit merkez fallback'i kullanılmaz, skor üretilmez.</td></tr>
+      <tr><td><code>MULTIPLE_FACES</code></td><td>Takip ve temporal durum temizlenir; kare unsupported/insufficient sayılir.</td></tr>
+      <tr><td><code>DETECTOR_ERROR</code></td><td>Kısa hold mumkunse degrade edilir; süre dolduysa skor üretilmez.</td></tr>
+      <tr><td><code>DETECTOR_UNAVAILABLE</code></td><td>Capture desteklenmiyor olarak raporlanir.</td></tr>
+    </tbody>
+  </table>
+
+  <h3>5.3 Başlangıç tracker ayarları</h3>
+  <ul>
+    <li>EMA smoothing alpha: <code>0.32</code></li>
+    <li>Kısa kayıp hold süresi: <code>0.80 saniye</code></li>
+    <li>Yatay kutu genisletme: <code>%10</code></li>
+    <li>Dikey kutu genisletme: <code>%12</code></li>
+    <li>Ani kutu değişimi IoU esigi: <code>0.12</code></li>
+    <li>Kadraj kenari reliability çarpanı: <code>0.75</code></li>
+  </ul>
+  <p class="small">
+    Bunlar geliştirme başlangıç değerleridir. Hedef cihaz ve capture koşullarıyla
+    test edilmeden evrensel eşik gibi kabul edilmemelidir.
+  </p>
+
+  <h3>5.4 ROI kuralları</h3>
+  <ul>
+    <li>Deterministik yöntemlere tam kare değil, takip edilen yüz crop'u verilmelidir.</li>
+    <li>ROI koordinatlari her sonuç paketinde saklanmalıdir: <code>x, y, width, height</code>.</li>
+    <li>ROI'nin kaynağı <code>detected_face_landmarks</code> olarak metadata'ya yazılmalıdır.</li>
+    <li>Görüntü aynalama işlemi yalnızca bir kez ve belgelenmiş bir noktada yapılmalıdır.</li>
+    <li>ROI kadraj kenarina temas ediyorsa analiz tamamen normal kabul edilmemeli; reliability düşürulmelidir.</li>
+    <li>Yüz yokken merkezde varsayımsal bir kare/dairenin analiz edilmesi yasaktır.</li>
+  </ul>
+
+  <h2>6. AnalysisSession ve session ömrü</h2>
+  <p>
+    Temporal analiz, birbiriyle iliskili karelerin aynı state nesnesinden
+    gecmesini gerektirir. Bu nedenle API'deki her kamera/video akışı bir
+    <code>session_id</code> ile temsil edilmelidir.
+  </p>
+  <pre>class AnalysisSession:
+    def __init__(self, ...):
+        self.detector = MediaPipeFaceDetector(...)
+        self.tracker = StableFaceROITracker(self.detector, ...)
+        self.methods = instantiate_method_types_once()
+        self.moire_temporal = TemporalMoiréState(...)
+        self.lock = Lock()
+        self.last_access_monotonic = monotonic()
+
+    def process_frame(self, media):
+        # 1. timestamp ve frame sırası kontrolu
+        # 2. detector + tracker
+        # 3. yüz crop'u ve kalite metadata'si
+        # 4. deterministik yöntemleri çalıştir
+        # 5. temporal Moiré durumunu guncelle
+        # 6. tek bir response modeli döndür
+
+    def close(self):
+        self.tracker.reset()
+        self.moire_temporal.reset()
+        self.detector.close()</pre>
+
+  <h3>Çoklu kullanıcı ve concurrency</h3>
+  <ul>
+    <li>Tek bir global <code>deque</code> tüm kullanıcılar için paylaşilmamalidir.</li>
+    <li>Her <code>session_id</code> kendi tracker ve Moiré geçmışini tasimalidir.</li>
+    <li>Aynı session'ın kareleri sırali islenmeli; session başına lock kullanılmalıdır.</li>
+    <li>Farklı session'lar birbirinden bağımsız çalışabilmelidir.</li>
+    <li>MediaPipe VIDEO detector state'i session'lar arasında paylaşilmamalidir. Paylaşılacaksa detector modu ve timestamp/state izolasyonu yeniden tasarlanmalidir.</li>
+    <li>Belirli süre kullanılmayan session'lar TTL ile kapatılmalı ve detector kaynakları serbest bırakılmalıdır.</li>
+    <li>Maksimum aktif session sayısı konfigüre edilmeli; limitsiz model instance açılmamalıdır.</li>
+  </ul>
+
+  <div class="callout critical">
+    <strong>Thread-safety notu:</strong> Mevcut yöntem sınıfları çalışma sırasında
+    <code>self._quality</code> ve <code>self._details</code> alanlarına yazıyor.
+    Aynı method instance'ı iki request tarafından paralel çalıştırılırsa sonuçlar
+    karışabilir. Kısa vadede session lock zorunludur. Uzun vadede bu geçici
+    değerler lokal değişken yapılmalıdır.
+  </div>
+
+  <h2>7. Pipeline değişikliği</h2>
+  <h3>Bugünkü problem</h3>
+  <pre>def run_all(media, metadata=None):
+    method_input = DeterministicMethodInput(...)
+    return [method.run(method_input) for method in discover_methods()]</pre>
+  <p>
+    <code>discover_methods()</code> her çağrıda modül import edip yeni nesneler
+    üretiyor. Bu işlem hem gereksiz maliyetlidir hem de temporal state'i siler.
+  </p>
+
+  <h3>Önerilen ayrım</h3>
+  <ol>
+    <li><code>discover_method_types()</code>: Uygulama açılışında sınıf tiplerini bir kez bulur ve cache'ler.</li>
+    <li><code>AnalysisSession</code>: Bu tiplerden session'a özel method instance'ları bir kez oluşturur.</li>
+    <li><code>run_methods(methods, roi_media)</code>: Hazır instance listesini yüz ROI'si üzerinde çalıştırır.</li>
+  </ol>
+  <p>
+    İlk entegrasyonda method dosyasını parçalamak zorunlu değildir. Daha sonra
+    her sınıf kendi dosyasına ayrılarak discovery mekanizması sadeleştirilebilir.
+  </p>
+
+  <h2>8. Zamansal Moiré mimarisi</h2>
+  <h3>8.1 Tek-kare Moiré çekirdeği</h3>
+  <p>Mevcut <code>MoiréDeterministicMethod</code> korunabilir. Her yüz ROI'sinde:</p>
+  <ul>
+    <li>Global FFT ile periyodik tepe, simetri ve yön yoğunluğu ölçülür.</li>
+    <li>ROI, <code>40x40</code> lokal patch'lere bölünür.</li>
+    <li>Bir patch'in güçlü sayılması için skor <code>&gt;= 0.50</code>, en az iki tepe ve en az bir simetrik çift gerekir.</li>
+    <li>Lokal skor için en az iki güçlü patch gerekir.</li>
+    <li>Final ham skor, global ve lokal skorun büyüğüdür.</li>
+  </ul>
+
+  <h3>8.2 Temporal state</h3>
+  <pre>history = deque(maxlen=10)
+suspicious_streak = 0
+normal_streak = 0
+warning_is_active = False
+previous_face_box = None</pre>
+
+  <table>
+    <thead><tr><th>Kural</th><th>Başlangıç değeri</th><th>Amaç</th></tr></thead>
+    <tbody>
+      <tr><td>Kayan pencere</td><td>Son 10 geçerli skor</td><td>Eski kareleri otomatik düşürmek.</td></tr>
+      <tr><td>Minimum geçmış</td><td>6 kare</td><td>Yeterli temporal veri olmadan karar vermemek.</td></tr>
+      <tr><td>Şüpheli raw eşik</td><td><code>0.72</code></td><td>Ardışık şüpheli kare sayaçıni artırmak.</td></tr>
+      <tr><td>Uyarı açma</td><td>4 ardışık şüpheli kare ve history median <code>&gt;= 0.72</code></td><td>Tek karelik paraziti filtrelemek.</td></tr>
+      <tr><td>Release esigi</td><td><code>0.52</code></td><td>Uyarınin açılma esiginden farklı kapanma esigi kullanmak.</td></tr>
+      <tr><td>Uyarı kapama</td><td>4 ardışık normal kare ve son median <code>&lt;= 0.52</code></td><td>Uyarınin yanıp sonmesini engellemek.</td></tr>
+    </tbody>
+  </table>
+
+  <h3>8.3 Reset kuralları</h3>
+  <p>Aşağıdaki durumlarda Moiré geçmışi temizlenmelidir:</p>
+  <ul>
+    <li>Session kapatıldı veya timeout oldu.</li>
+    <li>Kamera/video kaynağı değişti.</li>
+    <li>Birden fazla yüz tespit edildi.</li>
+    <li>Uzun süre geçerli yüz ROI'si gelmedi; önerilen başlangıç: 4 geçersiz kare.</li>
+    <li>Yeni yüz kutusunun onceki kutuyla IoU değeri <code>0.45</code> altına düştü.</li>
+    <li>Frame index geriye gitti veya yeni video başlatıldı.</li>
+  </ul>
+  <div class="callout">
+    <strong>Tasarım tercihi:</strong> Temporal state'i doğrudan
+    <code>MoiréDeterministicMethod</code> içine koymak yerine ayrı
+    <code>TemporalMoiréState</code> sınıfinda tutmak önerilir. Böylece tek-kare
+    matematiği stateless ve kolay test edilir kalır.
+  </div>
+
+  <h2>9. Sonuç sozlesmesi</h2>
+  <p>Tercih edilen sonuç alanları:</p>
+  <pre>@dataclass(frozen=True)
+class DeterministicMethodResult:
+    method_name: str
+    available: bool
+    raw_score: float | None
+    stabilized_score: float | None
+    reliability: float
+    status: str
+    reason_codes: list[str]
+    details: dict[str, Any]
+    runtime_ms: float</pre>
+  <p>
+    Tüm skorlar <code>0.0-1.0</code> aralığında kalabilir. Ancak
+    <code>available=False</code> ise <code>raw_score</code> ve
+    <code>stabilized_score</code> tercihen <code>None</code> olmalıdır.
+  </p>
+
+  <h3>Geriye uyumluluk secenegi</h3>
+  <p>
+    Mevcut <code>score: float</code> hemen değiştirilemiyorsa <code>score=0.0</code>
+    geçici olarak korunabilir; fakat <code>available</code> ust seviye zorunlu alan
+    yapilmali ve tüm tuketiciler skordan once bu alanı kontrol etmelidir.
+  </p>
+
+  <h2>10. API ve frame akışı</h2>
+  <h3>Önerilen endpoint'ler</h3>
+  <table>
+    <thead><tr><th>Endpoint</th><th>Amaç</th></tr></thead>
+    <tbody>
+      <tr><td><code>POST /sessions</code></td><td>Yeni kamera/video analiz session'i açar ve <code>session_id</code> döndürur.</td></tr>
+      <tr><td><code>POST /sessions/{id}/frames</code></td><td>Multipart görüntü, frame index ve timestamp alır; takipli analiz sonuçu döndürur.</td></tr>
+      <tr><td><code>DELETE /sessions/{id}</code></td><td>Tracker, detector ve temporal geçmışi kapatir.</td></tr>
+      <tr><td><code>GET /sessions/{id}</code></td><td>Opsiyonel: session durumu ve son erisim bilgisini döndürur.</td></tr>
+      <tr><td><code>WebSocket /sessions/{id}/stream</code></td><td>Yüksek FPS veya düşük gecikme gereken ikinci aşama secenegi.</td></tr>
+    </tbody>
+  </table>
+
+  <p>
+    API uzaktaki istemciden kare alıyorsa sunucu tarafinda <code>VideoCapture</code>
+    açmak gerekli değildir. İştemci tam kareleri gonderir; sunucu decode, takip ve
+    analiz yapar. Sunucunun fiziksel kamerayi kendisinin açmasi ayrı bir deployment
+    senaryosudur.
+  </p>
+
+  <h3>Örnek response</h3>
+  <pre>{
+  "session_id": "...",
+  "frame_index": 42,
+  "timestamp_ms": 1386,
+  "tracking": {
+    "status": "DETECTED",
+    "box": {"x": 184, "y": 72, "width": 238, "height": 276},
+    "fresh_detection": true,
+    "reliability": 1.0,
+    "reason": "face detected and tracked"
+  },
+  "quality": {
+    "available": true,
+    "brightness": 126.4,
+    "laplaçıan_variance": 184.2
+  },
+  "methods": [
+    {
+      "method_name": "moire_periodic_pattern",
+      "available": true,
+      "raw_score": 0.81,
+      "reliability": 1.0,
+      "status": "suspicious_signal"
+    }
+  ],
+  "moire_temporal": {
+    "stable_score": 0.77,
+    "history_length": 7,
+    "suspicious_streak": 4,
+    "warning_active": true,
+    "status": "SUSPICIOUS"
+  }
+}</pre>
+
+  <h2>11. Bağımlılıklar ve konfigurasyon</h2>
+  <h3>Requirements</h3>
+  <p>Hedef Python/runtime ile uyumlu sürümler kilitlenerek su paketler eklenmelidir:</p>
+  <ul>
+    <li><code>numpy</code></li>
+    <li><code>opencv-contrib-python</code> veya ekip standardina göre <code>opencv-python-headless</code></li>
+    <li><code>mediapipe</code></li>
+    <li><code>python-multipart</code> (FastAPI ile dosya/frame upload yapilacaksa)</li>
+  </ul>
+  <p>
+    <code>face_landmarker.task</code> dosyası deployment paketinde bulunmalı;
+    yolu environment/config üzerinden verilmelidir. Model dosyası yoksa uygulama
+    sessizce sabit ROI'ye dönmemeli, açık bir detector-unavailable sonuçu vermelidir.
+  </p>
+
+  <h3>Tek config kaynağı</h3>
+  <p>Aşağıdaki ayarlar <code>app/config.py</code> veya typed settings içinde toplanmalıdır:</p>
+  <ul>
+    <li>Model yolu ve detector confidence eşikleri</li>
+    <li>Tracker smoothing, expansion, hold ve IoU değerleri</li>
+    <li>ROI kalite eşikleri</li>
+    <li>Moiré history, streak, suspicious ve release eşikleri</li>
+    <li>Session TTL ve maksimum session sayısı</li>
+    <li>Maksimum frame boyutu ve kabul edilen MIME tipleri</li>
+  </ul>
+
+  <h2>12. Hata ve kalite davranışi</h2>
+  <table>
+    <thead><tr><th>Durum</th><th>Skor davranışi</th><th>API davranışi</th></tr></thead>
+    <tbody>
+      <tr><td>Boş/bozuk görüntü</td><td>Skor yok</td><td>4xx validation hatasi.</td></tr>
+      <tr><td>Yüz bulunamadi</td><td>Skor yok; history'ye 0 eklenmez</td><td><code>INSUFFICIENT_QUALITY</code> veya tracking <code>NO_FACE</code>.</td></tr>
+      <tr><td>Çoklu yüz</td><td>Skor yok; tracker ve Moiré state reset</td><td><code>MULTIPLE_FACES</code>.</td></tr>
+      <tr><td>ROI çok küçük/bulanik/karanlık</td><td>Skor yok; history değişmez</td><td>Açık reason code.</td></tr>
+      <tr><td>Tek method exception</td><td>O method unavailable</td><td>Diğer methodlar çalışmaya devam eder; hata loglanir.</td></tr>
+      <tr><td>Session bulunamadi/timeout</td><td>Yok</td><td>404/410 ve yeni session açma yönlendirmesi.</td></tr>
+      <tr><td>Sırası bozuk timestamp/frame</td><td>History'ye eklenmez</td><td>Validation veya session reset politikası.</td></tr>
+    </tbody>
+  </table>
+
+  <div class="callout warning">
+    <strong>Kural:</strong> Geçersiz kare, normal kare değildir. Geçersiz kare
+    temporal history'ye <code>0</code> olarak eklenmemelidir.
+  </div>
+
+  <h2>13. Performans ve işletim notlari</h2>
+  <ul>
+    <li>Method discovery frame başına değil uygulama açılışında bir kez yapılmalıdır.</li>
+    <li>Yüz tespiti kare başına bir kez yapilmali; tüm yöntemler aynı ROI'yi kullanmalidir.</li>
+    <li>Mevcut altı method ayrı ayrı grayscale/resize yapar; ilk entegrasyonda kabul edilebilir, performans sorunu olursa ortak preprocessing context'i eklenmelidir.</li>
+    <li>Global FFT, Moiré ve Radial/Angular benzer FFT girdilerini tekrar hesaplıyor. İkinci optimizasyon aşamasında ortak FFT bundle cache edilebilir.</li>
+    <li>CPU ağır OpenCV/NumPy/MediaPipe işlemleri event loop'u bloklamamalı; kontrollü worker/thread pool kullanılmalıdır.</li>
+    <li>Aynı session için kuyruk büyümemeli. Gerçek zamanlı akışta "latest frame wins" veya sınırlı backpressüre uygulanmalıdır.</li>
+    <li>Debug heatmap ve ayrıntılı candidate listeleri normal response'ta opsiyonel olmalıdır.</li>
+    <li>Runtime süresi method ve toplam frame bazında ölçülüp raporlanmalıdır.</li>
+  </ul>
+
+  <h2>14. Test plani</h2>
+  <h3>Unit testler</h3>
+  <ul class="checklist">
+    <li>Detector timestamp'leri aynı session içinde kesin artıyor.</li>
+    <li>Yüz kutusu EMA ile yumuşuyor ve gereksiz zıplama yapmıyor.</li>
+    <li>Kısa tespit kaybı <code>HELD</code>, 0,8 saniye sonrası <code>NO_FACE</code> oluyor.</li>
+    <li>Çoklu yüz eski hold state'ini ve Moiré history'yi temizliyor.</li>
+    <li>Yüz yokken sabit merkez ROI'si kullanılmıyor.</li>
+    <li>Tek lokal periyodik patch Moiré spatial vote'u geçemiyor.</li>
+    <li>İki güçlü patch lokal Moiré skorunu artırıyor.</li>
+    <li>Tek yüksek kare uyarı açmıyor.</li>
+    <li>Altı geçerli geçmış ve dört şüpheli kare uyarı açabiliyor.</li>
+    <li>Dört normal kare ve release median uyarıyı kapatıyor.</li>
+    <li>Geçersiz kare history'ye sıfır olarak eklenmiyor.</li>
+  </ul>
+
+  <h3>Entegrasyon ve API testleri</h3>
+  <ul class="checklist">
+    <li>Tam kareden bulunan ROI gerçekten deterministik methodlara verilen görüntüdür.</li>
+    <li>İki farklı session'ın tracker ve deque değerleri birbirine karışmaz.</li>
+    <li>Aynı session'daki paralel frame istekleri sırali/güvenli işlenir.</li>
+    <li>Session kapatıldığında detector close edilir ve temporal state temizlenir.</li>
+    <li>Method exception'i diğer methodları ve tüm request'i düşürmez.</li>
+    <li>Bozuk upload, büyük frame ve hatalı MIME sınırlanır.</li>
+    <li>Response schema'da tracking, quality, method ve temporal alanları bulunur.</li>
+  </ul>
+
+  <h3>Saha doğrulaması</h3>
+  <ul>
+    <li>Gerçek yüz, telefon replay, monitor replay ve baskı örnekleri ayrı kaydedilmelidir.</li>
+    <li>Farklı kamera, ekran yenileme hızı, mesafe, açı, ışık ve autofocus koşulları test edilmelidir.</li>
+    <li>Eşikler test setine bakılarak elle ayarlanmamalı; calibration ve final test verileri ayrılmalıdır.</li>
+    <li>APCER, BPCER, ACER, ROC/EER ve abstention oranları raporlanmadan üretim doğruluğu iddia edilmemelidir.</li>
+  </ul>
+
+  <h2>15. Kabul kriterleri</h2>
+  <ol>
+    <li>Tam kamera karesi methodlara doğrudan gitmiyor; yalnızca takip edilen yüz ROI'si analiz ediliyor.</li>
+    <li>Yüz bulunamazsa veya birden fazla yüz varsa risk skoru üretilmiyor.</li>
+    <li>Tracker kısa kayıplarda ROI'yi sınırlı süre tutuyor ve reliability'yi düşürüyor.</li>
+    <li>Aynı session içindeki Moiré geçmışi kareler boyunca koruyor.</li>
+    <li>Farklı session'ların detector/tracker/Moiré state'i tamamen izole.</li>
+    <li>Tek karelik yüksek Moiré skoru uyarı açmıyor.</li>
+    <li>Temporal uyarı açma ve kapama kuralları otomatik testlerle doğrulanıyor.</li>
+    <li>Unavailable sonuç sıfır risk gibi yorumlanamıyor.</li>
+    <li>Session kapatma/timeout detector kaynaklarını serbest bırakıyor.</li>
+    <li>Requirements temiz bir ortamda kurulup API ve deterministik methodlar çalışıyor.</li>
+  </ol>
+
+  <h2>16. Uygulama sırası</h2>
+  <table>
+    <thead><tr><th>Faz</th><th>İş</th><th>Çıktı</th></tr></thead>
+    <tbody>
+      <tr><td>1</td><td>Dependencies, config, model asset ve ROI contracts</td><td>Detector için çalışır temel.</td></tr>
+      <tr><td>2</td><td>MediaPipe ROI detector + StableFaceROITracker</td><td>Tam kareden stabil yüz kutusu.</td></tr>
+      <tr><td>3</td><td>AnalysisSession + SessionManager</td><td>Kareler arası ve kullanıcılar arası doğru state ömrü.</td></tr>
+      <tr><td>4</td><td>Pipeline'ın persistent method instance'larıyla çalışması</td><td>Yöntemlerin yüz crop'unda çalışması.</td></tr>
+      <tr><td>5</td><td>TemporalMoiréState</td><td>Deque, median, streak ve histerezis.</td></tr>
+      <tr><td>6</td><td>Result contract ve API endpoint'leri</td><td>Açık, izlenebilir response.</td></tr>
+      <tr><td>7</td><td>Unit/integration/concurrency testleri</td><td>Kabul kriterlerinin otomatik doğrulanması.</td></tr>
+      <tr><td>8</td><td>Profiling ve ortak preprocessing/FFT optimizasyonu</td><td>Ölçülmüş performans iyileştirmesi.</td></tr>
+      <tr><td>9</td><td>Capture/calibration protokolü</td><td>Deneysel eşiklerin cihaz/ortama göre doğrulanması.</td></tr>
+    </tbody>
+  </table>
+
+  <h2>17. Yapılmaması gerekenler</h2>
+  <ul>
+    <li class="decision">Sadece <code>dummy.py</code> içine deque ekleyip mevcut <code>run_all()</code> ile devam etmek.</li>
+    <li>Bütün kullanıcılar için tek global tracker veya Moiré history kullanmak.</li>
+    <li>Yüz yokken sabit merkez crop'undan skor üretmek.</li>
+    <li>Detector confidence değerini liveness/PAD kaniti olarak kullanmak.</li>
+    <li>Geçersiz kareyi <code>score=0</code> diyerek normal history'ye eklemek.</li>
+    <li>MediaPipe VIDEO detector'unu session izolasyonu olmadan farklı akışlarda paylaşmak.</li>
+    <li>Kalibrasyonsuz düşük skoru kesin <code>LIVE</code> kararı olarak sunmak.</li>
+    <li>Doğal periyodik dokuların da Moiré sinyali üretebileceğini göz ardı etmek.</li>
+  </ul>
+
+  <h2>18. Geliştirici devir checklist'i</h2>
+  <ul class="checklist">
+    <li>Hedef deployment tek kamera mı, çoklu API session'i mı netleştirildi.</li>
+    <li>Frame'in tam kare ve BGR olduğu API contract'ında yazıldı.</li>
+    <li><code>session_id</code>, <code>frame_index</code> ve <code>timestamp_ms</code> zorunluluğu belirlendi.</li>
+    <li>Model asset path ve dependency sürümleri kilitlendi.</li>
+    <li>Detector ROI-only ve PAD kararından ayrı tutuldu.</li>
+    <li>Tracker durumları response modeline eklendi.</li>
+    <li>Pipeline methodları her karede yeniden oluşturmuyor.</li>
+    <li>Session bazlı lock, TTL, close ve maksimum session limiti uygulandı.</li>
+    <li>Temporal Moiré reset/açma/kapatma kuralları test edildi.</li>
+    <li>Unavailable ile normal düşük risk birbirinden ayrıldı.</li>
+    <li>Entegrasyon testleri CI içinde çalışıyor.</li>
+    <li>Performans ölçülmeden frame stride veya çözünürlük düşürülmedi.</li>
+  </ul>
+
+  <h2>19. Son not</h2>
+  <p>
+    Bu entegrasyonun ana prensibi, <strong>tek-kare matematiği</strong> ile
+    <strong>kareler arası uygulama state'ini</strong> ayırmaktır.
+    <code>dummy.py</code> bir yüz ROI'sindeki ölçümleri üretir;
+    <code>AnalysisSession</code> ise doğru yüzun takip edilmesini, karelerin aynı
+    akısa ait olmasıni ve Moiré'nin zaman içinde kalıcı olup olmadigini yönetir.
+  </p>
+  <div class="callout">
+    Entegrasyon bu ayrımla yapilirsa mevcut matematiksel yöntemler korunur,
+    yüz/akış yönetimi test edilebilir olur ve ileride fusion, calibration veya
+    yeni temporal yöntemler eklemek kolaylaşır.
+  </div>
+</body>
+</html>
